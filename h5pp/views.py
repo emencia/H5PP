@@ -153,7 +153,7 @@ def createView(request, contentId=None):
     if request.user.is_authenticated():
         editor = h5peditorContent(request, contentId)
         if request.method == 'POST':
-            if contentId is not None:
+            if contentId != None:
                 request.POST = request.POST.copy()
                 request.POST['contentId'] = contentId
             form = CreateForm(request, request.POST, request.FILES)
@@ -223,7 +223,8 @@ class ContentDetailView(TemplateView):
 def contentsView(request):
     if 'contentId' in request.GET:
         try:
-            owner = h5p_contents.objects.get(content_id=h5pGetContentId(request))
+            owner = h5p_contents.objects.get(
+                content_id=h5pGetContentId(request))
         except:
             raise Http404
         h5pLoad(request)
@@ -280,10 +281,12 @@ def scoreView(request, contentId):
         raise Http404
     if request.user.is_authenticated():
         if request.method == 'POST' and (request.user.username == content.author or request.user.is_superuser):
-            userData = h5p_content_user_data.objects.filter(content_main_id=content.content_id)
+            userData = h5p_content_user_data.objects.filter(
+                content_main_id=content.content_id)
             if userData:
                 userData.delete()
-            userPoints = h5p_points.objects.filter(content_id=content.content_id)
+            userPoints = h5p_points.objects.filter(
+                content_id=content.content_id)
             if userPoints:
                 userPoints.delete()
 
@@ -291,10 +294,12 @@ def scoreView(request, contentId):
 
         if 'user' in request.GET and (request.user.username == content.author or request.user.is_superuser):
             user = User.objects.get(username=request.GET['user'])
-            userData = h5p_content_user_data.objects.filter(user_id=user.id, content_main_id=content.content_id)
+            userData = h5p_content_user_data.objects.filter(
+                user_id=user.id, content_main_id=content.content_id)
             if userData:
                 userData.delete()
-            userPoints = h5p_points.objects.filter(uid=user.id, content_id=content.content_id)
+            userPoints = h5p_points.objects.filter(
+                uid=user.id, content_id=content.content_id)
             if userPoints:
                 userPoints.delete()
 
@@ -306,13 +311,15 @@ def scoreView(request, contentId):
                 scores = ContentFile(scores)
                 response = HttpResponse(scores, 'text/plain')
                 response['Content-Length'] = scores.size
-                response['Content-Disposition'] = 'attachment; filename="h5pp_users_score.txt"'
+                response[
+                    'Content-Disposition'] = 'attachment; filename="h5pp_users_score.txt"'
             else:
                 scores = exportScore(request.GET['download'])
                 scores = ContentFile(scores)
                 response = HttpResponse(scores, 'text/plain')
                 response['Content-Length'] = scores.size
-                response['Content-Disposition'] = 'attachment; filename="content_%s_users_score.txt"' % request.GET['download']
+                response[
+                    'Content-Disposition'] = 'attachment; filename="content_%s_users_score.txt"' % request.GET['download']
 
             return response
 

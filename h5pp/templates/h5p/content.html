@@ -14,7 +14,7 @@
 		@import url("{{ style }}");
 	{% endfor %}
 	{% for style in data.filesAssets.css %}
-		@import url("{% static style %}");
+		@import url("{{ style }}");
 	{% endfor %}
 	</style>
 	{% for script in data.assets.js %}

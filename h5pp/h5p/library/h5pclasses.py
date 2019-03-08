@@ -1928,7 +1928,7 @@ class H5PContentValidator:
     def validateVideo(self, video, semantics):
         for variant in video:
             self.validateFilelike(variant, semantics, [
-                                   "width", "height", "codecs", "quality"])
+                "width", "height", "codecs", "quality"])
 
     ##
     # Validate given audio data
@@ -2110,7 +2110,8 @@ class H5PContentValidator:
             # We matched a lone "<" character
             return '&lt;'
 
-        matches = re.search('%^<\s*(/\s*)?([a-zA-Z0-9\-]+)([^>]*)>?|(<!--.*?-->)$%', string)
+        matches = re.search(
+            '%^<\s*(/\s*)?([a-zA-Z0-9\-]+)([^>]*)>?|(<!--.*?-->)$%', string)
         if not matches:
             # Seriously malformed
             return ''
@@ -2138,12 +2139,12 @@ class H5PContentValidator:
         xhtmlSlash = '/' if attrList else ''
 
         # Clean up attributes
-        attr2 = ' '.join(self.filterXssAttributes(attrList, self.allowedStyles if elem in self.allowed_styleable_tags else False))
+        attr2 = ' '.join(self.filterXssAttributes(
+            attrList, self.allowedStyles if elem in self.allowed_styleable_tags else False))
         attr2 = re.sub('[<>]', '', attr2)
         attr2 = ' ' + attr2 if len(attr2) else ''
 
         return '<' + elem + attr2 + xhtmlSlash + '>'
-
 
     def getCopyrightSemantics(self):
 

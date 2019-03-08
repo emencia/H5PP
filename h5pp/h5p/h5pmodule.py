@@ -17,8 +17,8 @@ from h5pp.models import *
 from h5pp.h5p.h5pclasses import H5PDjango
 
 from django.core import serializers
-
-
+jsonserializer = serializers.get_serializer("json")
+json_serializer = jsonserializer()
 
 STYLES = [
     "styles/h5p.css",
@@ -203,7 +203,7 @@ def includeH5p(request):
             contentId + '"></div>'
     else:
         html = '<div class="h5p-iframe-wrapper"><iframe id="h5p-iframe-' + contentId + '" class="h5p-iframe" data-content-id="' + \
-               contentId + \
+            contentId + \
             '" style="height:1px" src="about:blank" frameBorder="0" scrolling="no"></iframe></div>'
 
     return {'html': html, 'data': data}
@@ -285,7 +285,7 @@ def h5pAddCoreAssets():
 
 def h5pGetCoreSettings(user):
     coreSettings = {
-        'baseUrl': Site.objects.get_current().domain,
+        'baseUrl': settings.BASE_URL,
         'url': "{}h5pp".format(settings.MEDIA_URL),
         'postUserStatistics': user.id > 0 if user.id else False,
         'ajaxPath': "{}{}ajax".format(Site.objects.get_current().domain, settings.H5P_URL),
@@ -427,8 +427,9 @@ def h5pGetContentSettings(user, content):
     filtered = core.filterParameters(content)
 
     # Get preloaded user data
-    results = h5p_content_user_data.objects.filter(user_id=user.id, content_main_id=content[
-        'id'], preloaded=1).values('sub_content_id', 'data_id', 'data')
+    results = h5p_content_user_data.objects.filter(
+        user_id=user.id, content_main_id=content[
+            'id'], preloaded=1).values('sub_content_id', 'data_id', 'data')
 
     contentUserData = {
         0: {
@@ -580,6 +581,8 @@ def h5pAddIframeAssets(request, integration, contentId, files):
 ##
 # Generate embed page to be included in iframe
 ##
+
+
 def h5pEmbed(request):
     h5pPath = settings.STATIC_URL + 'h5p/'
     coreSettings = h5pGetCoreSettings(request.user)
@@ -733,6 +736,8 @@ def libraryToString(library, folderName=False):
 ##
 # Returns all rows from a cursor as a dict
 ##
+
+
 def dictfetchall(self, cursor):
     desc = cursor.description
     return [
