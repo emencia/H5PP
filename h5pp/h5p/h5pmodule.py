@@ -584,7 +584,8 @@ def h5pAddIframeAssets(request, integration, contentId, files):
 
 
 def h5pEmbed(request):
-    h5pPath = settings.STATIC_URL + 'h5p/'
+    # h5pPath = settings.STATIC_URL + 'h5p/'
+    h5pPath = 'h5p/'
     coreSettings = h5pGetCoreSettings(request.user)
     framework = H5PDjango(request.user)
 

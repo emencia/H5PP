@@ -9,6 +9,7 @@ import cgi
 import uuid
 import shutil
 from django.conf import settings
+from pathlib import Path
 
 is_array = lambda var: isinstance(var, (list, tuple))
 
@@ -233,11 +234,11 @@ class H5PDefaultStorage:
     ##
     def dirReady(self, path):
         if not os.path.exists(path):
-            parent = re.sub('\/[^\/]+\/?$', '', path)
+            parent = Path(path).parent
             if not self.dirReady(parent):
                 return False
 
-            os.mkdir(path)
+            os.mkdir(path, 0o777)
 
         if not os.path.isdir(path):
             raise Exception('Path is not a directory')
