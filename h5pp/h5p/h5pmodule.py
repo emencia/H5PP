@@ -15,29 +15,21 @@ from django.contrib.auth.models import User
 
 from h5pp.models import *
 from h5pp.h5p.h5pclasses import H5PDjango
+import urllib.parse
 
 from django.core import serializers
+
+from h5pp.url_builder import join_url
+
 jsonserializer = serializers.get_serializer("json")
 json_serializer = jsonserializer()
 
-STYLES = [
-    "styles/h5p.css",
-    "styles/h5p-confirmation-dialog.css",
-    "styles/h5p-core-button.css"
-]
+STYLES = ["styles/h5p.css", "styles/h5p-confirmation-dialog.css", "styles/h5p-core-button.css"]
 
-OVERRIDE_STYLES = settings.STATIC_URL + '/h5p/styles/h5pp.css'
+OVERRIDE_STYLES = join_url([settings.STATIC_URL, 'h5p/styles/h5pp.css'])
 
-SCRIPTS = [
-    "js/jquery.js",
-    "js/h5p.js",
-    "js/h5p-event-dispatcher.js",
-    "js/h5p-x-api-event.js",
-    "js/h5p-x-api.js",
-    "js/h5p-content-type.js",
-    "js/h5p-confirmation-dialog.js",
-    "js/h5p-action-bar.js"
-]
+SCRIPTS = ["js/jquery.js", "js/h5p.js", "js/h5p-event-dispatcher.js", "js/h5p-x-api-event.js", "js/h5p-x-api.js",
+    "js/h5p-content-type.js", "js/h5p-confirmation-dialog.js", "js/h5p-action-bar.js"]
 
 
 ##
@@ -68,38 +60,28 @@ def h5pLibraryDetailsTitle(libraryId):
 def h5pInsert(request, interface):
     if 'h5p_upload' in request.POST:
         storage = interface.h5pGetInstance('storage')
-        storage.savePackage(h5pGetContentId(request), None, False, {
-            'disable': request.POST['disable'], 'title': request.POST['title']})
+        storage.savePackage(h5pGetContentId(request), None, False,
+                            {'disable': request.POST['disable'], 'title': request.POST['title']})
     else:
         if not 'name' in request.POST['main_library']:
-            lib = h5p_libraries.objects.filter(library_id=request.POST['main_library_id']).values(
-                'machine_name', 'major_version', 'minor_version')
-            lib = {
-                'libraryId': request.POST['main_library_id'],
-                'machineName': lib.machine_name,
-                'majorVersion': lib.major_version,
-                'minorVersion': lib.minor_version
-            }
+            lib = h5p_libraries.objects.filter(library_id=request.POST['main_library_id']).values('machine_name',
+                'major_version', 'minor_version')
+            lib = {'libraryId': request.POST['main_library_id'], 'machineName': lib.machine_name,
+                'majorVersion': lib.major_version, 'minorVersion': lib.minor_version}
         else:
-            lib = {
-                'libraryId': request.POST['main_library_id'],
+            lib = {'libraryId': request.POST['main_library_id'],
                 'machineName': request.POST['main_library']['name'] if 'name' in request.POST['main_library'] else '',
                 'majorVersion': request.POST['main_library']['majorVersion'] if 'majorVersion' in request.POST[
                     'main_library'] else '',
                 'minorVersion': request.POST['main_library']['minorVersion'] if 'minorVersion' in request.POST[
-                    'main_library'] else ''
-            }
+                    'main_library'] else ''}
         core = h5pGetInstance('core')
-        core.saveContent({
-            'id': h5pGetContentId(request),
-            'title': request.POST['title'],
-            'params': request.POST['json_content'],
-            'embed_type': request.POST['embed_type'],
-            'disable': request.POST['disable'],
-            'library': lib,
-            'author': request.user.username,
-            'h5p_library': request.POST['h5p_library'] if 'h5p_library' in request.POST else None
-        }, request.POST['nid'])
+        core.saveContent(
+            {'id': h5pGetContentId(request), 'title': request.POST['title'], 'params': request.POST['json_content'],
+                'embed_type': request.POST['embed_type'], 'disable': request.POST['disable'], 'library': lib,
+                'author': request.user.username,
+                'h5p_library': request.POST['h5p_library'] if 'h5p_library' in request.POST else None},
+            request.POST['nid'])
 
     return True
 
@@ -107,11 +89,9 @@ def h5pInsert(request, interface):
 def h5pUpdate(request):
     if 'h5p_upload' in request:
         storage = h5pGetInstance('storage')
-        storage.savePackage({
-            'id': h5pGetContentId(request),
-            'title': request.POST['title'],
-            'disable': request.POST['disable']
-        }, request.POST['nid'], False)
+        storage.savePackage(
+            {'id': h5pGetContentId(request), 'title': request.POST['title'], 'disable': request.POST['disable']},
+            request.POST['nid'], False)
     else:
         h5pInsert(request)
 
@@ -122,13 +102,10 @@ def h5pDelete(request):
 
     if 'main_library' in request.POST:
         # Log content delete
-        event = H5PEvent('content', 'delete',
-                         request.POST['nid'],
-                         request.POST['title'],
+        event = H5PEvent('content', 'delete', request.POST['nid'], request.POST['title'],
                          request.POST['main_library']['name'],
-                         request.POST['main_library'][
-                             'majorVersion'] + '.' + request.POST['main_library']['minorVersion']
-                         )
+                         request.POST['main_library']['majorVersion'] + '.' + request.POST['main_library'][
+                             'minorVersion'])
 
 
 ##
@@ -145,8 +122,7 @@ def h5pDeleteH5PContent(request, content):
     h5p_points.objects.filter(content_id=content.content_id).delete()
 
     # Remove content user data
-    h5p_content_user_data.objects.filter(
-        content_main_id=content.content_id).delete()
+    h5p_content_user_data.objects.filter(content_main_id=content.content_id).delete()
 
 
 def h5pLoad(request):
@@ -172,8 +148,7 @@ def h5pView(request):
         html = includeH5p(request)
 
     if not html:
-        html = '<div>' + \
-            'Sorry, preview of H5P content is not yet available.' + '</div>'
+        html = '<div>' + 'Sorry, preview of H5P content is not yet available.' + '</div>'
     else:
         h5pSetStarted(h5pGetContentId(request))
 
@@ -194,17 +169,13 @@ def h5pUserDelete(user):
 
 def includeH5p(request):
     contentId = h5pGetContentId(request)
-    embed = determineEmbedType(request.GET['embed_type'], request.GET[
-        'main_library']['embedTypes'])
+    embed = determineEmbedType(request.GET['embed_type'], request.GET['main_library']['embedTypes'])
 
     data = h5pAddFilesAndSettings(request, embed)
     if embed == 'div':
-        html = '<div class="h5p-content" data-content-id="' + \
-            contentId + '"></div>'
+        html = '<div class="h5p-content" data-content-id="' + contentId + '"></div>'
     else:
-        html = '<div class="h5p-iframe-wrapper"><iframe id="h5p-iframe-' + contentId + '" class="h5p-iframe" data-content-id="' + \
-            contentId + \
-            '" style="height:1px" src="about:blank" frameBorder="0" scrolling="no"></iframe></div>'
+        html = '<div class="h5p-iframe-wrapper"><iframe id="h5p-iframe-' + contentId + '" class="h5p-iframe" data-content-id="' + contentId + '" style="height:1px" src="about:blank" frameBorder="0" scrolling="no"></iframe></div>'
 
     return {'html': html, 'data': data}
 
@@ -216,8 +187,7 @@ def includeH5p(request):
 
 def h5pSetStarted(user, contentId):
     if user.id:
-        exist = h5p_points.objects.filter(
-            content_id=contentId, uid=user.id).values()
+        exist = list(h5p_points.objects.filter(content_id=contentId, uid=user.id).values())
         if len(exist) > 0:
             update = h5p_points.objects.get(content_id=contentId, uid=user.id)
             update.content_id = contentId
@@ -225,8 +195,7 @@ def h5pSetStarted(user, contentId):
             update.started = int(time.time())
             update.save()
         else:
-            h5p_points.objects.create(
-                content_id=contentId, uid=user.id, started=int(time.time()))
+            h5p_points.objects.create(content_id=contentId, uid=user.id, started=int(time.time()))
 
 
 ##
@@ -239,13 +208,10 @@ def h5pSetFinished(request):
     contentId = request.POST['contentId']
     score = request.POST['score']
     maxScore = request.POST['maxScore']
-    response = {
-        'success': False
-    }
+    response = {'success': False}
 
     if contentId.isdigit() and score.isdigit() and maxScore.isdigit():
-        update = h5p_points.objects.get(
-            content_id=contentId, uid=request.user.id)
+        update = h5p_points.objects.get(content_id=contentId, uid=request.user.id)
         update.finished = int(time.time())
         update.points = score
         update.max_points = maxScore
@@ -261,18 +227,15 @@ def h5pSetFinished(request):
 
 
 def h5pAddCoreAssets():
-    path = "{}h5p/".format(settings.STATIC_URL)
-    assets = {
-        'css': list(),
-        'js': list()
-    }
+    path = join_url([settings.STATIC_URL, 'h5p'])
+    assets = {'css': list(), 'js': list()}
 
     for style in STYLES:
-        css = path + style
+        css = join_url([path, style])
         assets['css'].append(css)
 
     for script in SCRIPTS:
-        js = path + script
+        js = join_url([path, script])
         assets['js'].append(js)
 
     return assets
@@ -286,61 +249,43 @@ def h5pAddCoreAssets():
 def h5pGetCoreSettings(user):
     coreSettings = {
         'baseUrl': settings.BASE_URL,
-        'url': "{}h5pp".format(settings.MEDIA_URL),
+        'url': join_url([settings.MEDIA_URL, 'h5pp']),
         'postUserStatistics': user.id > 0 if user.id else False,
-        'ajaxPath': "{}{}ajax".format(Site.objects.get_current().domain, settings.H5P_URL),
+        'ajaxPath': join_url([Site.objects.get_current().domain, settings.H5P_URL, 'ajax']),
         'ajax': {
-            'setFinished': "{}ajax/?setFinished".format(settings.H5P_URL),
-            'contentUserData': "{}ajax/?content-user-data&contentId=:contentId&dataType=:dataType&subContentId=:subContentId".format(settings.H5P_URL),
+            'setFinished': join_url([settings.H5P_URL, 'ajax/?setFinished']),
+            'contentUserData': join_url(['settings.H5P_URL', "ajax/?content-user-data&contentId=:contentId&dataType=:dataType&subContentId=:subContentId"]),
         },
         'tokens': {
             'result': createToken('result'),
             'contentUserData': createToken('contentuserdata')
         },
         'saveFreq': settings.H5P_SAVE if settings.H5P_SAVE != 0 else 'false',
-        'l10n': {
-            'H5P': {
-                'fullscreen': 'Fullscreen',
-                'disableFullscreen': 'Disable fullscreen',
-                'download': 'Download',
-                'copyrights': 'Rights of use',
-                'embed': 'Embed',
-                'size': 'Size',
-                'showAdvanced': 'Show advanced',
+        'l10n':
+        {
+            'H5P':
+                {'fullscreen': 'Fullscreen', 'disableFullscreen': 'Disable fullscreen', 'download': 'Download',
+                'copyrights': 'Rights of use', 'embed': 'Embed', 'size': 'Size', 'showAdvanced': 'Show advanced',
                 'hideAdvanced': 'Hide advanced',
                 'advancedHelp': 'Include this script on your website if you want dynamic sizing of the embedded content:',
-                'copyrightInformation': 'Rights of use',
-                'close': 'Close',
-                'title': 'Title',
-                'author': 'Author',
-                'year': 'Year',
-                'source': 'Source',
-                'license': 'License',
-                'thumbnail': 'Thumbnail',
+                'copyrightInformation': 'Rights of use', 'close': 'Close', 'title': 'Title', 'author': 'Author',
+                'year': 'Year', 'source': 'Source', 'license': 'License', 'thumbnail': 'Thumbnail',
                 'noCopyrights': 'No copyright information available for this content.',
                 'downloadDescription': 'Download this content as a H5P file.',
                 'copyrightsDescription': 'View copyright information for this content.',
                 'embedDescription': 'View the embed code for this content.',
                 'h5pDescription': 'Visit H5P.org to check out more cool content.',
                 'contentChanged': 'This content has changed since you last used it.',
-                'startingOver': 'You\'ll be starting over',
-                'by': 'by',
-                'showMore': 'Show more',
-                'showLess': 'Show less',
-                'subLevel': 'Sublevel',
-                'confirmDialogHeader': 'Confirm action',
+                'startingOver': 'You\'ll be starting over', 'by': 'by', 'showMore': 'Show more',
+                'showLess': 'Show less', 'subLevel': 'Sublevel', 'confirmDialogHeader': 'Confirm action',
                 'confirmDialogBody': 'Please confirm that you wish to proceed. This action is not reversible.',
-                'cancelLabel': 'Cancel',
-                'confirmLabel': 'Confirm'
-            }
+                'cancelLabel': 'Cancel', 'confirmLabel': 'Confirm'
+                 }
         }
     }
 
     if user.id:
-        coreSettings['user'] = {
-            'name': user.username,
-            'mail': user.email
-        }
+        coreSettings['user'] = {'name': user.username, 'mail': user.email}
 
     return coreSettings
 
@@ -363,32 +308,25 @@ def h5pAddFilesAndSettings(request, embedType):
         return integration
 
     integration['contents'] = dict()
-    integration['contents'][
-        str('cid-' + content['id'])] = h5pGetContentSettings(request.user, content)
+    integration['contents'][str('cid-' + content['id'])] = h5pGetContentSettings(request.user, content)
 
     core = interface.h5pGetInstance('core')
-    preloadedDependencies = core.loadContentDependencies(
-        content['id'], 'preloaded')
+    preloadedDependencies = core.loadContentDependencies(content['id'], 'preloaded')
     files = core.getDependenciesFiles(preloadedDependencies)
     libraryList = h5pDependenciesToLibraryList(preloadedDependencies)
 
-    filesAssets = {
-        'js': list(),
-        'css': list()
-    }
+    filesAssets = {'js': list(), 'css': list()}
     if embedType == 'div':
         for script in files['scripts']:
-            url = settings.MEDIA_URL + 'h5pp/' + \
-                script['path'] + script['version']
-            filesAssets['js'].append(
-                settings.MEDIA_URL + 'h5pp/' + script['path'])
-            integration['loadedJs'] = url
+            url = join_url([settings.MEDIA_URL, 'h5pp/', script['path']])
+            filesAssets['js'].append(url)
+            integration['loadedJs'] = join_url([url, script['version']])
+            # url = settings.MEDIA_URL + 'h5pp/' + script['path'] + script['version']  # filesAssets['js'].append(settings.MEDIA_URL + 'h5pp/' + script['path'])  # integration['loadedJs'] = url
         for style in files['styles']:
-            url = settings.MEDIA_URL + 'h5pp/' + \
-                style['path'] + style['version']
-            filesAssets['css'].append(
-                settings.MEDIA_URL + 'h5pp/' + style['path'])
-            integration['loadedCss'] = url
+            url = join_url([settings.MEDIA_URL, 'h5pp/', style['path']])
+            filesAssets['css'].append(url)
+            integration['loadedCss'] = join_url([url, style['version']])
+            # url = settings.MEDIA_URL + 'h5pp/' + style['path'] + style['version']  # filesAssets['css'].append(settings.MEDIA_URL + 'h5pp/' + style['path'])  # integration['loadedCss'] = url
         # Override CSS
         filesAssets['css'].append(OVERRIDE_STYLES)
         integration['loadedCss'] = OVERRIDE_STYLES
@@ -407,18 +345,12 @@ def h5pAddFilesAndSettings(request, embedType):
 def h5pGetContent(request):
     interface = H5PDjango(request.user)
     core = interface.h5pGetInstance('core')
-    return {
-        'id': h5pGetContentId(request),
-        'title': request.GET['title'],
-        'params': request.GET['json_content'],
-        'language': request.GET['language'],
-        'library': request.GET['main_library'],
-        'embedType': 'div',
+    return {'id': h5pGetContentId(request), 'title': request.GET['title'], 'params': request.GET['json_content'],
+        'language': request.GET['language'], 'library': request.GET['main_library'], 'embedType': 'div',
         'filtered': request.GET['filtered'],
-        'url': "{}h5pp/content/{}/".format(settings.MEDIA_URL, str(h5pGetContentId(request))),
+        'url': join_url([settings.MEDIA_URL, 'h5pp/content/', str(h5pGetContentId(request)) + '/']),
         'displayOptions': '',
-        'slug': request.GET['h5p_slug']
-    }
+        'slug': request.GET['h5p_slug']}
 
 
 def h5pGetContentSettings(user, content):
@@ -427,31 +359,19 @@ def h5pGetContentSettings(user, content):
     filtered = core.filterParameters(content)
 
     # Get preloaded user data
-    results = h5p_content_user_data.objects.filter(
-        user_id=user.id, content_main_id=content[
-            'id'], preloaded=1).values('sub_content_id', 'data_id', 'data')
+    results = h5p_content_user_data.objects.filter(user_id=user.id, content_main_id=content['id'], preloaded=1).values(
+        'sub_content_id', 'data_id', 'data')
 
-    contentUserData = {
-        0: {
-            'state': '{}'
-        }
-    }
+    contentUserData = {0: {'state': '{}'}}
     for result in results:
-        contentUserData[result['sub_content_id']][
-            result['data_id']] = result['data']
+        contentUserData[result['sub_content_id']][result['data_id']] = result['data']
 
-    contentSettings = {
-        'library': libraryToString(content['library']),
-        'jsonContent': filtered,
-        'fullScreen': content['library']['fullscreen'],
-        'exportUrl': h5pGetExportPath(content),
-        'embedCode': str('<iframe src="' + Site.objects.get_current().domain + settings.H5P_URL + 'embed/' + content['id'] + '" width=":w" height=":h" frameborder="0" allowFullscreen="allowfullscreen"></iframe>'),
-        'mainId': content['id'],
-        'url': str(content['url']),
-        'title': str(content['title'].encode('utf-8')),
-        'contentUserData': contentUserData,
-        'displayOptions': content['displayOptions']
-    }
+    contentSettings = {'library': libraryToString(content['library']), 'jsonContent': filtered,
+        'fullScreen': content['library']['fullscreen'], 'exportUrl': h5pGetExportPath(content), 'embedCode': str(
+            '<iframe src="' + Site.objects.get_current().domain + settings.H5P_URL + 'embed/' + content[
+                'id'] + '" width=":w" height=":h" frameborder="0" allowFullscreen="allowfullscreen"></iframe>'),
+        'mainId': content['id'], 'url': str(content['url']), 'title': str(content['title'].encode('utf-8')),
+        'contentUserData': contentUserData, 'displayOptions': content['displayOptions']}
     return contentSettings
 
 
@@ -487,8 +407,7 @@ def h5pGetListContent(request):
 
 def determineEmbedType(contentEmbedType, libraryEmbedTypes):
     # Detect content embed type
-    embedType = "div" if (
-        "div" in contentEmbedType.lower()) else "iframe"
+    embedType = "div" if ("div" in contentEmbedType.lower()) else "iframe"
 
     if libraryEmbedTypes != None and libraryEmbedTypes != "":
         # Check that embed type is available for library
@@ -507,11 +426,9 @@ def determineEmbedType(contentEmbedType, libraryEmbedTypes):
 
 def h5pDependenciesToLibraryList(dependencies):
     libraryList = dict()
-    for key, dependency in dependencies.items():
-        libraryList[dependency['machine_name']] = {
-            'majorVersion': dependency['major_version'],
-            'minorVersion': dependency['minor_version']
-        }
+    for key, dependency in list(dependencies.items()):
+        libraryList[dependency['machine_name']] = {'majorVersion': dependency['major_version'],
+            'minorVersion': dependency['minor_version']}
     return libraryList
 
 
@@ -540,19 +457,13 @@ def h5pAddIframeAssets(request, integration, contentId, files):
             if h5pIsExternalAsset(style['path']):
                 externalStyles.append(style)
             else:
-                styles.append({
-                    'data': style['path'],
-                    'type': 'file'
-                })
-        integration['contents'][
-            'cid-' + contentId]['styles'] = core.getAssetsUrls(externalStyles)
+                styles.append({'data': style['path'], 'type': 'file'})
+        integration['contents']['cid-' + contentId]['styles'] = core.getAssetsUrls(externalStyles)
         integration['contents']['cid-' + contentId]['styles'].append(styles)
     else:
-        integration['contents'][
-            'cid-' + contentId]['styles'] = core.getAssetsUrls(files['styles'])
+        integration['contents']['cid-' + contentId]['styles'] = core.getAssetsUrls(files['styles'])
         # Override Css
-        integration['contents'][
-            'cid-' + contentId]['styles'].append(OVERRIDE_STYLES)
+        integration['contents']['cid-' + contentId]['styles'].append(OVERRIDE_STYLES)
 
     if writable:
         if not os.path.exists(os.path.join(settings.H5P_PATH, 'files')):
@@ -565,17 +476,11 @@ def h5pAddIframeAssets(request, integration, contentId, files):
                 externalScripts.append(script)
             else:
                 scripts[script['path']] = list()
-                scripts[script['path']].append({
-                    'data': script['path'],
-                    'type': 'file',
-                    'preprocess': True
-                })
-        integration['contents'][
-            'cid-' + contentId]['scripts'] = core.getAssetsUrls(externalScripts)
+                scripts[script['path']].append({'data': script['path'], 'type': 'file', 'preprocess': True})
+        integration['contents']['cid-' + contentId]['scripts'] = core.getAssetsUrls(externalScripts)
         integration['contents']['cid-' + contentId]['scripts'].append(scripts)
     else:
-        integration['contents'][
-            'cid-' + contentId]['scripts'] = core.getAssetsUrls(files['scripts'])
+        integration['contents']['cid-' + contentId]['scripts'] = core.getAssetsUrls(files['scripts'])
 
 
 ##
@@ -585,24 +490,27 @@ def h5pAddIframeAssets(request, integration, contentId, files):
 
 def h5pEmbed(request):
     # h5pPath = settings.STATIC_URL + 'h5p/'
-    h5pPath = 'h5p/'
+    h5pPath = join_url([settings.STATIC_URL, 'h5p/'])
+    # The template adds the static URL
+    # h5pPath = 'h5p/'
     coreSettings = h5pGetCoreSettings(request.user)
     framework = H5PDjango(request.user)
 
     scripts = list()
     for script in SCRIPTS:
-        scripts.append(h5pPath + script)
+        url = join_url([h5pPath, script])
+        scripts.append(url)
     styles = list()
     for style in STYLES:
-        styles.append(h5pPath + style)
+        url = join_url([h5pPath, style])
+        styles.append(url)
 
     integration = h5pGetCoreSettings(request.user)
 
     content = h5pGetContent(request)
 
     integration['contents'] = dict()
-    integration['contents'][
-        'cid-' + content['id']] = h5pGetContentSettings(request.user, content)
+    integration['contents']['cid-' + content['id']] = h5pGetContentSettings(request.user, content)
 
     core = framework.h5pGetInstance('core')
     preloadedDependencies = core.loadContentDependencies(content['id'])
@@ -617,8 +525,7 @@ def h5pEmbed(request):
 
 def getUserScore(contentId, user=None, ajax=False):
     if user != None:
-        scores = h5p_points.objects.filter(
-            content_id=contentId, uid=user.id).values('points', 'max_points')
+        scores = h5p_points.objects.filter(content_id=contentId, uid=user.id).values('points', 'max_points')
     else:
         scores = h5p_points.objects.filter(content_id=contentId)
         for score in scores:
@@ -642,8 +549,7 @@ def exportScore(contentId=None):
     if contentId:
         scores = h5p_points.objects.filter(content_id=contentId)
         content = h5p_contents.objects.get(content_id=contentId)
-        response = response + \
-            '[Content] : %s - [Users] : %s\n' % (content.title, len(scores))
+        response = response + '[Content] : %s - [Users] : %s\n' % (content.title, len(scores))
         for score in scores:
             score.uid = User.objects.get(id=score.uid).username
             score.has_finished = 'Completed' if score.finished >= score.started else 'Not completed'
@@ -659,8 +565,7 @@ def exportScore(contentId=None):
     for score in scores:
         content = h5p_contents.objects.get(content_id=score.content_id)
         if content.content_id != currentContent:
-            response = response + \
-                '--------------------\n[Content] : %s\n--------------------\n' % content.title
+            response = response + '--------------------\n[Content] : %s\n--------------------\n' % content.title
         score.uid = User.objects.get(id=score.uid).username
         score.has_finished = 'Completed' if score.finished >= score.started else 'Not completed'
         score.points = '..' if score.points == None else score.points
@@ -669,6 +574,8 @@ def exportScore(contentId=None):
             score.uid, score.points, score.max_points, score.has_finished)
         currentContent = content.content_id
     return response
+
+
 ##
 # Uninstall H5P
 ##
@@ -741,7 +648,4 @@ def libraryToString(library, folderName=False):
 
 def dictfetchall(self, cursor):
     desc = cursor.description
-    return [
-        dict(zip([col[0] for col in desc], row))
-        for row in cursor.fetchall()
-    ]
+    return [dict(list(zip([col[0] for col in desc], row))) for row in cursor.fetchall()]

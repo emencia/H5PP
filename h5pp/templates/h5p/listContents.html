@@ -58,7 +58,7 @@
 					var id = selected.getElementsByTagName('td')[3].innerText;
 					var form = document.createElement("form");
 					form.setAttribute("method", "post");
-					form.setAttribute("action", "{% url 'h5pp:h5plistContents' %});
+					form.setAttribute("action", "{% url 'h5pp:h5plistContents' %}bla");
 					var hiddenField = document.createElement("input");
 					hiddenField.setAttribute("type", "hidden");
 					hiddenField.setAttribute("name", "csrfmiddlewaretoken");
@@ -114,17 +114,23 @@
 	<h3 class="page-title">Contents</h3>
 	<div class="alert alert-success">
 		<p align="center">
-			Here is the list of contents currently created or imported into the H5PP database.<br>
-			You can <b>search</b> for content by name, see the content type, the author and the ID of the content (if you are administrator / superuser).<br>
+			Here is the list of contents currently created or imported into the H5PP database.<br/>
+			You can <b>search</b> for content by name, see the content type, the author and the ID of the content (if you are administrator / superuser).<br/>
 			To <b>select</b> a content click on its row.
 		</p>
 		<hr>
 		<p>
-			<ul><li><b>As authenticated user </b>:
-			You can access content by clicking on its title. You can also check your score <span class="glyphicon glyphicon-list-alt"></span> on this content. An empty score table means that you have not seen this content yet</li>
+			<ul>
+                <li>
+                    <b>As authenticated user </b>:
+			        You can access content by clicking on its title. You can also check your score <span class="glyphicon glyphicon-list-alt"></span> on this content. An empty score table means that you have not seen this content yet
+                </li>
 
-			<li><b>As a content owner </b>:
-			You can edit <span class="glyphicon glyphicon-wrench"></span> or delete your content <span class="glyphicon glyphicon-erase"></span>. You can also check the score of the users who made the activities of your video and access to the score management page <span class="glyphicon glyphicon-edit"></span></li></ul>
+			    <li>
+                    <b>As a content owner </b>:
+			        You can edit <span class="glyphicon glyphicon-wrench"></span> or delete your content <span class="glyphicon glyphicon-erase"></span>. You can also check the score of the users who made the activities of your video and access to the score management page <span class="glyphicon glyphicon-edit"></span>
+                </li>
+            </ul>
 		</p>
 	</div>
 	{% if status %}

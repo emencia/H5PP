@@ -5,15 +5,14 @@ import shutil
 import json
 import re
 import os
+import urllib.parse
 
 from django.conf import settings
 
 from h5pp.models import h5p_libraries
 
 
-
 class H5PDjangoEditor:
-
     global buildBase
     buildBase = None
 
@@ -40,35 +39,24 @@ class H5PDjangoEditor:
             for libraryName in liblist:
                 matches = re.search('(.+)\s(\d+)\.(\d+)$', libraryName)
                 if matches:
-                    libraries.append({
-                        'uberName': libraryName,
-                        'name': matches.group(1),
-                        'majorVersion': matches.group(2),
-                        'minorVersion': matches.group(3)
-                    })
+                    libraries.append(
+                        {'uberName': libraryName, 'name': matches.group(1), 'majorVersion': matches.group(2),
+                         'minorVersion': matches.group(3)})
 
-        libraries = self.storage.getLibraries(
-            libraries if 'libraries' in locals() else None)
+        libraries = self.storage.getLibraries(libraries if 'libraries' in locals() else None)
 
         if self.h5p.development_mode:
             devLibs = self.h5p.h5pD.getLibraries()
 
             for i in range(0, len(libraries)):
                 if devLibs:
-                    lid = libraries[i][
-                        'name'] + ' ' + libraries[i]['majorVersion'] + '.' + libraries[i]['minorVersion']
+                    lid = libraries[i]['name'] + ' ' + libraries[i]['majorVersion'] + '.' + libraries[i]['minorVersion']
                     if 'lid' in devLibs:
-                        libraries[i] = {
-                            'uberName': lid,
-                            'name': devLibs[lid]['machineName'],
-                            'title': devLibs[lid]['title'],
-                            'majorVersion': devLibs[lid]['majorVersion'],
-                            'minorVersion': devLibs[lid]['minorVersion'],
-                            'runnable': devLibs[lid]['runnable'],
-                            'restricted': libraries[i]['restricted'],
-                            'tutorialUrl': libraries[i]['tutorialUrl'],
-                            'isOld': libraries[i]['isOld']
-                        }
+                        libraries[i] = {'uberName': lid, 'name': devLibs[lid]['machineName'],
+                                        'title': devLibs[lid]['title'], 'majorVersion': devLibs[lid]['majorVersion'],
+                                        'minorVersion': devLibs[lid]['minorVersion'],
+                                        'runnable': devLibs[lid]['runnable'], 'restricted': libraries[i]['restricted'],
+                                        'tutorialUrl': libraries[i]['tutorialUrl'], 'isOld': libraries[i]['isOld']}
 
         return json.dumps(libraries)
 
@@ -76,13 +64,10 @@ class H5PDjangoEditor:
     # Get all scripts, css and semantics data for a library
     ##
     def getLibraryData(self, machineName, majorVersion, minorVersion, langageCode, prefix=''):
-        libraries = self.findEditorLibraries(
-            machineName, majorVersion, minorVersion)
+        libraries = self.findEditorLibraries(machineName, majorVersion, minorVersion)
         libraryData = dict()
-        libraryData['semantics'] = self.h5p.loadLibrarySemantics(
-            machineName, majorVersion, minorVersion)
-        libraryData['language'] = self.getLibraryLanguage(
-            machineName, majorVersion, minorVersion, langageCode)
+        libraryData['semantics'] = self.h5p.loadLibrarySemantics(machineName, majorVersion, minorVersion)
+        libraryData['language'] = self.getLibraryLanguage(machineName, majorVersion, minorVersion, langageCode)
 
         aggregateAssets = self.h5p.aggregateAssets
         self.h5p.aggregateAssets = False
@@ -92,7 +77,9 @@ class H5PDjangoEditor:
         self.h5p.aggregateAssets = aggregateAssets
 
         # Create base URL
-        url = settings.MEDIA_URL + '/h5pp' + prefix
+        url = urllib.parse.urljoin(settings.MEDIA_URL, 'h5pp/')
+        url = urllib.parse.urljoin(url, prefix)
+        # url = settings.MEDIA_URL + '/h5pp' + prefix
 
         # JavaScripts
         if 'scripts' in files:
@@ -101,14 +88,13 @@ class H5PDjangoEditor:
                     # External file
                     if not 'javascript' in libraryData:
                         libraryData['javascript'] = collections.OrderedDict()
-                    libraryData['javascript'][script['path'] +
-                                              script['version']] = '\n' + script['path'].read()
+                    libraryData['javascript'][script['path'] + script['version']] = '\n' + script['path'].read()
                 else:
                     # Local file
                     if not 'javascript' in libraryData:
                         libraryData['javascript'] = collections.OrderedDict()
-                    libraryData['javascript'][
-                        url + script['path'] + script['version']] = '\n' + self.h5p.fs.getContent(script['path'])
+                    libraryData['javascript'][url + script['path'] + script['version']] = '\n' + self.h5p.fs.getContent(
+                        script['path'])
 
         # Stylesheets
         if 'styles' in files:
@@ -117,24 +103,22 @@ class H5PDjangoEditor:
                     # External file
                     if not 'css' in libraryData:
                         libraryData['css'] = dict()
-                    libraryData['css'][css['path'] +
-                                       css['version']] = css['path'].read()
+                    libraryData['css'][css['path'] + css['version']] = css['path'].read()
                 else:
                     # Local file
                     if not 'css' in libraryData:
                         libraryData['css'] = dict()
-                    self.buildCssPath(
-                        None, url + os.path.dirname(css['path']) + '/')
+                    self.buildCssPath(None, url + os.path.dirname(css['path']) + '/')
                     libraryData['css'][url + css['path'] + css['version']] = re.sub(
-                        '(?i)url\([\']?(?![a-z]+:|\/+)([^\')]+)[\']?\)', self.buildCssPath, self.h5p.fs.getContent(css['path']))
+                        '(?i)url\([\']?(?![a-z]+:|\/+)([^\')]+)[\']?\)', self.buildCssPath,
+                        self.h5p.fs.getContent(css['path']))
 
         # Add translations for libraries
-        for key, library in libraries.items():
-            language = self.getLibraryLanguage(library['machine_name'], library[
-                                               'major_version'], library['minor_version'], langageCode)
+        for key, library in list(libraries.items()):
+            language = self.getLibraryLanguage(library['machine_name'], library['major_version'],
+                                               library['minor_version'], langageCode)
             if language != None:
-                lang = '; H5PEditor.language["' + \
-                    library['machine_name'] + '"] = ' + language + ';'
+                lang = '; H5PEditor.language["' + library['machine_name'] + '"] = ' + language + ';'
                 libraryData['javascript'][lang] = lang
 
         return json.dumps(libraryData)
@@ -150,28 +134,24 @@ class H5PDjangoEditor:
         # Order dependencies by weight
         orderedDependencies = collections.OrderedDict()
         for i in range(1, len(dependencies) + 1):
-            for key, dependency in dependencies.items():
+            for key, dependency in list(dependencies.items()):
                 if dependency['weight'] == i and dependency['type'] == 'editor':
                     # Only load editor libraries
-                    dependency['library']['id'] = dependency[
-                        'library']['library_id']
-                    orderedDependencies[dependency['library'][
-                        'library_id']] = dependency['library']
+                    dependency['library']['id'] = dependency['library']['library_id']
+                    orderedDependencies[dependency['library']['library_id']] = dependency['library']
                     break
 
         return orderedDependencies
 
     def getLibraryLanguage(self, machineName, majorVersion, minorVersion, langageCode):
-        language = self.storage.getLanguage(
-            machineName, majorVersion, minorVersion, langageCode)
+        language = self.storage.getLanguage(machineName, majorVersion, minorVersion, langageCode)
         return None if language == False else language
 
     ##
     # Create directories for uploaded content
     ##
     def createDirectories(self, contentId):
-        self.contentDirectory = os.path.join(
-            self.contentFilesDir, str(contentId))
+        self.contentDirectory = os.path.join(self.contentFilesDir, str(contentId))
         if not os.path.isdir(self.contentFilesDir):
             os.mkdir(os.path.join(self.basePath, self.contentFilesDir))
 
@@ -189,22 +169,18 @@ class H5PDjangoEditor:
     def processParameters(self, contentId, newLibrary, newParameters, oldLibrary=None, oldParameters=None):
         newFiles = list()
         oldFiles = list()
-        field = {
-            'type': 'library'
-        }
-        libraryParams = {
-            'library': self.h5p.libraryToString(newLibrary),
-            'params': newParameters
-        }
+        field = {'type': 'library'}
+        libraryParams = {'library': self.h5p.libraryToString(newLibrary), 'params': newParameters}
         self.processField(field, libraryParams, newFiles)
         if oldLibrary != None:
-            self.processSemantics(oldFiles, self.h5p.loadLibrarySemantics(oldLibrary[
-                                  'name'], oldLibrary['majorVersion'], oldLibrary['minorVersion'], oldParameters))
+            self.processSemantics(oldFiles,
+                                  self.h5p.loadLibrarySemantics(oldLibrary['name'], oldLibrary['majorVersion'],
+                                                                oldLibrary['minorVersion'], oldParameters))
 
             for i in range(0, len(oldFiles)):
                 if not oldFiles[i] in newFiles and not re.search('(?i)^(\w+:\/\/|\.\.\/)', oldFiles[i]):
                     removeFile = self.contentDirectory + oldFiles[i]
-                    del(removeFile)
+                    del (removeFile)
                     self.storage.removeFile(removeFile)
 
     ##
@@ -236,16 +212,14 @@ class H5PDjangoEditor:
         elif field['type'] == 'library':
             if 'library' in params and 'params' in params:
                 library = self.libraryFromString(params['library'])
-                semantics = self.h5p.loadLibrarySemantics(library['machineName'], library[
-                                                          'majorVersion'], library['minorVersion'])
+                semantics = self.h5p.loadLibrarySemantics(library['machineName'], library['majorVersion'],
+                                                          library['minorVersion'])
                 self.processSemantics(files, semantics, params['params'])
             return
         elif field['type'] == 'group':
             if params:
                 if len(field['fields']) == 1:
-                    params = {
-                        field['fields'][0]['name']: params
-                    }
+                    params = {field['fields'][0]['name']: params}
                 self.processSemantics(files, field['fields'], params)
             return
         elif field['type'] == 'list':
@@ -260,8 +234,7 @@ class H5PDjangoEditor:
 
         matches = re.search(self.h5p.relativePathRegExp, params['path'])
         if matches:
-            source = os.path.join(self.contentDirectory, matches.group(
-                1), matches.group(4), matches.group(5))
+            source = os.path.join(self.contentDirectory, matches.group(1), matches.group(4), matches.group(5))
             dest = os.path.join(self.contentDirectory, matches.group(5))
             if os.path.exists(source) and not os.path.exists(dest):
                 shutil.copy(source, dest)
@@ -269,8 +242,7 @@ class H5PDjangoEditor:
             params['path'] = matches.group(5)
         else:
             oldPath = os.path.join(self.basePath, editorPath, params['path'])
-            newPath = os.path.join(
-                self.basePath, self.contentDirectory, params['path'])
+            newPath = os.path.join(self.basePath, self.contentDirectory, params['path'])
             if not os.path.exists(newPath) and os.path.exists(oldPath):
                 shutil.copy(oldPath, newPath)
 
@@ -299,9 +271,5 @@ class H5PDjangoEditor:
         pre = '^([\w0-9\-\.]{1,255})[\-\ ]([0-9]{1,5})\.([0-9]{1,5})$'
         res = re.search(pre, libraryString)
         if res:
-            return {
-                'machineName': res.group(1),
-                'majorVersion': res.group(2),
-                'minorVersion': res.group(3)
-            }
+            return {'machineName': res.group(1), 'majorVersion': res.group(2), 'minorVersion': res.group(3)}
         return False

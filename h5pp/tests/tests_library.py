@@ -54,7 +54,7 @@ class CoreTestCase(TestCase):
 		}
 
 		core.saveContent(content)
-		result = h5p_contents.objects.values()
+		result = list(h5p_contents.objects.values())
 
 		self.assertTrue(result.exists())
 
@@ -62,7 +62,7 @@ class CoreTestCase(TestCase):
 		content['title'] = 'ContentTest2'
 
 		core.saveContent(content)
-		result = h5p_contents.objects.values()
+		result = list(h5p_contents.objects.values())
 
 		self.assertTrue(result[1]['title'] == 'ContentTest2')
 		print('test_save_content ---- Check')
@@ -143,7 +143,7 @@ class StorageTestCase(TestCase):
 
 	def test_save_library(self):
 		storage = H5PDefaultStorage(settings.MEDIA_ROOT)
-		lib = h5p_libraries.objects.filter(library_id=1).values()[0]
+		lib = list(h5p_libraries.objects.filter(library_id=1).values())[0]
 		os.makedirs('/home/pod/H5PP/media/tmp/H5P.Test')
 		lib['uploadDirectory'] = '/home/pod/H5PP/media/tmp/H5P.Test'
 
@@ -157,7 +157,7 @@ class StorageTestCase(TestCase):
 
 	def test_save_content(self):
 		storage= H5PDefaultStorage(settings.MEDIA_ROOT)
-		cont = h5p_contents.objects.filter(content_id=1).values()[0]
+		cont = list(h5p_contents.objects.filter(content_id=1).values())[0]
 		os.makedirs('/home/pod/H5PP/media/tmp/ContentTest')
 
 		storage.saveContent('/home/pod/H5PP/media/tmp/ContentTest', 1)

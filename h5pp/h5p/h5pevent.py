@@ -14,7 +14,8 @@ class H5PEvent:
     log_level = LOG_ACTIONS
     log_time = 2592000  # 30 days
 
-    def __init__(self, user, typ, sub_type=None, content_id=None, content_title=None, library_name=None, library_version=None):
+    def __init__(self, user, typ, sub_type=None, content_id=None, content_title=None, library_name=None,
+                 library_version=None):
         self.user = user
         self.typ = typ
         self.sub_type = sub_type
@@ -47,7 +48,8 @@ class H5PEvent:
     # Check if the event should be included in the statistics counter
     ##
     def validStats(self, typ, sub_type):
-        if (typ == 'content' and sub_type == 'shortcode insert') or (typ == 'library' and sub_type == None) or (typ == 'results' and sub_type == 'content'):
+        if (typ == 'content' and sub_type == 'shortcode insert') or (typ == 'library' and sub_type == None) or (
+            typ == 'results' and sub_type == 'content'):
             return True
         elif self.isAction(typ, sub_type):
             return True
@@ -57,7 +59,8 @@ class H5PEvent:
     # Check if event type is an action
     ##
     def isAction(self, typ, sub_type):
-        if (typ == 'content' and sub_type in ['create', 'create upload', 'update', 'update upload', 'upgrade', 'delete'] or typ == 'library' and sub_type in ['create', 'update']):
+        if (typ == 'content' and sub_type in ['create', 'create upload', 'update', 'update upload', 'upgrade',
+                                              'delete'] or typ == 'library' and sub_type in ['create', 'update']):
             return True
         return False
 
@@ -67,15 +70,11 @@ class H5PEvent:
     # There are no NONE values. Empty string or 0 is used instead
     ##
     def getDataArray(self):
-        return {
-            'created_at': self.time,
-            'type': self.typ,
-            'sub_type': '' if not self.sub_type else self.sub_type,
+        return {'created_at': self.time, 'type': self.typ, 'sub_type': '' if not self.sub_type else self.sub_type,
             'content_id': 0 if not self.content_id else self.content_id,
             'content_title': '' if not self.content_title else self.content_title,
             'library_name': '' if not self.library_name else self.library_name,
-            'library_version': '' if not self.library_version else self.library_version
-        }
+            'library_version': '' if not self.library_version else self.library_version}
 
     ##
     # Stores the event data in the database
@@ -100,16 +99,16 @@ class H5PEvent:
         atype = self.typ + ' ' + self.sub_type
 
         # Verify if counter exists
-        currentNum = h5p_counters.objects.filter(
-            type=atype, library_name=self.library_name, library_version=self.library_version).values('num')
+        currentNum = h5p_counters.objects.filter(type=atype, library_name=self.library_name,
+            library_version=self.library_version).values('num')
 
         if not currentNum.exists():
             # Insert new counter
-            h5p_counters.objects.create(
-                type=atype, library_name=self.library_name, library_version=self.library_version, num=1)
+            h5p_counters.objects.create(type=atype, library_name=self.library_name,
+                library_version=self.library_version, num=1)
         else:
             # Update counter with num+1
-            counter = h5p_counters.objects.get(
-                type=atype, library_name=self.library_name, library_version=self.library_version)
+            counter = h5p_counters.objects.get(type=atype, library_name=self.library_name,
+                library_version=self.library_version)
             counter.num = F('num') + 1
             counter.save()

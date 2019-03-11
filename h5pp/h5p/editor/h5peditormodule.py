@@ -5,45 +5,25 @@ import time
 import json
 import os
 import re
-
+import urllib.parse
 from django.conf import settings
 
 from h5pp.models import h5p_content_user_data, h5p_libraries, h5p_points
 from h5pp.h5p.h5pmodule import h5pAddCoreAssets, h5pAddFilesAndSettings
 from h5pp.h5p.h5pclasses import H5PDjango
 
+STYLES = ["libs/darkroom.css", "styles/css/application.css"]
 
-STYLES = ["libs/darkroom.css",
-          "styles/css/application.css"]
+OVERRIDE_STYLES = urllib.parse.urljoin(settings.STATIC_URL, 'h5p/styles/h5pp.css')
 
-
-OVERRIDE_STYLES = settings.STATIC_URL + '/h5p/styles/h5pp.css'
-
-SCRIPTS = [
-    "scripts/h5peditor.js",
-    "scripts/h5peditor-semantic-structure.js",
-    "scripts/h5peditor-editor.js",
-    "scripts/h5peditor-library-selector.js",
-    "scripts/h5peditor-form.js",
-    "scripts/h5peditor-text.js",
-    "scripts/h5peditor-html.js",
-    "scripts/h5peditor-number.js",
-    "scripts/h5peditor-textarea.js",
-    "scripts/h5peditor-file-uploader.js",
-    "scripts/h5peditor-file.js",
-    "scripts/h5peditor-image.js",
-    "scripts/h5peditor-image-popup.js",
-    "scripts/h5peditor-av.js",
-    "scripts/h5peditor-group.js",
-    "scripts/h5peditor-boolean.js",
-    "scripts/h5peditor-list.js",
-    "scripts/h5peditor-list-editor.js",
-    "scripts/h5peditor-library.js",
-    "scripts/h5peditor-library-list-cache.js",
-    "scripts/h5peditor-select.js",
-    "scripts/h5peditor-dimensions.js",
-    "scripts/h5peditor-coordinates.js",
-    "scripts/h5peditor-none.js",
+SCRIPTS = ["scripts/h5peditor.js", "scripts/h5peditor-semantic-structure.js", "scripts/h5peditor-editor.js",
+    "scripts/h5peditor-library-selector.js", "scripts/h5peditor-form.js", "scripts/h5peditor-text.js",
+    "scripts/h5peditor-html.js", "scripts/h5peditor-number.js", "scripts/h5peditor-textarea.js",
+    "scripts/h5peditor-file-uploader.js", "scripts/h5peditor-file.js", "scripts/h5peditor-image.js",
+    "scripts/h5peditor-image-popup.js", "scripts/h5peditor-av.js", "scripts/h5peditor-group.js",
+    "scripts/h5peditor-boolean.js", "scripts/h5peditor-list.js", "scripts/h5peditor-list-editor.js",
+    "scripts/h5peditor-library.js", "scripts/h5peditor-library-list-cache.js", "scripts/h5peditor-select.js",
+    "scripts/h5peditor-dimensions.js", "scripts/h5peditor-coordinates.js", "scripts/h5peditor-none.js",
     "ckeditor/ckeditor.js"]
 
 
@@ -58,7 +38,7 @@ def h5peditorContent(request, contentId=None):
         css = settings.STATIC_URL + 'h5p/h5peditor/' + style
         assets['css'].append(css)
 
-    #Override Css
+    # Override Css
     assets['css'].append(OVERRIDE_STYLES)
 
     for script in SCRIPTS:
@@ -66,33 +46,26 @@ def h5peditorContent(request, contentId=None):
             js = settings.STATIC_URL + 'h5p/h5peditor/' + script
             assets['js'].append(js)
 
-    add.append(settings.STATIC_URL +
-               'h5p/h5peditor/scripts/h5peditor-editor.js')
+    add.append(settings.STATIC_URL + 'h5p/h5peditor/scripts/h5peditor-editor.js')
     add.append(settings.STATIC_URL + 'h5p/h5peditor/application.js')
 
-    languageFile = settings.STATIC_URL + \
-        'h5p/h5peditor/language/' + settings.H5P_LANGUAGE + '.js'
+    languageFile = settings.STATIC_URL + 'h5p/h5peditor/language/' + settings.H5P_LANGUAGE + '.js'
     if not os.path.exists(settings.BASE_DIR + languageFile):
         languageFile = settings.STATIC_URL + 'h5p/h5peditor/language/en.js'
 
     add.append(languageFile)
 
     contentValidator = framework.h5pGetInstance('contentvalidator')
-    editor['editor'] = {
-        'filesPath': os.path.join(settings.MEDIA_URL, 'h5pp', 'editor'),
-        'fileIcon': {
-            'path': "{}h5p/h5peditor/images/binary-file.png".format(settings.STATIC_URL),
-            'width': 50,
-            'height': 50
-        },
-        'ajaxPath': "{}editorajax/{}/".format(settings.H5P_URL, (request['contentId'] if 'contentId' in request else '0')),
+    editor['editor'] = {'filesPath': os.path.join(settings.MEDIA_URL, 'h5pp', 'editor'),
+        'fileIcon': {'path': "{}h5p/h5peditor/images/binary-file.png".format(settings.STATIC_URL), 'width': 50,
+            'height': 50}, 'ajaxPath': "{}editorajax/{}/".format(settings.H5P_URL, (
+            request['contentId'] if 'contentId' in request else '0')),
         'libraryPath': "{}h5p/h5peditor/".format(settings.STATIC_URL),
-        'copyrightSemantics': contentValidator.getCopyrightSemantics(),
-        'assets': assets,
-        'contentRelUrl': '../media/h5pp/content/'
-    }
+        'copyrightSemantics': contentValidator.getCopyrightSemantics(), 'assets': assets,
+        'contentRelUrl': '../media/h5pp/content/'}
 
     return {'editor': json.dumps(editor), 'coreAssets': coreAssets, 'assets': assets, 'add': add}
+
 
 ##
 # Retrieves ajax parameters for content and update or delete
@@ -118,18 +91,15 @@ def handleContentUserData(request):
         if data != None and preload != None and invalidate != None:
             if data == '0':
                 # Delete user data
-                deleteUserData(contentId, subContentId,
-                               dataId, request.user.id)
+                deleteUserData(contentId, subContentId, dataId, request.user.id)
             else:
                 # Save user data
-                saveUserData(contentId, subContentId, dataId,
-                             preload, invalidate, data, request.user.id)
+                saveUserData(contentId, subContentId, dataId, preload, invalidate, data, request.user.id)
 
             return ajaxSuccess()
     else:
         # Fetch user data
-        userData = getUserData(contentId, subContentId,
-                               dataId, request.user.id)
+        userData = getUserData(contentId, subContentId, dataId, request.user.id)
         if not userData:
             # Did not find data, return nothing
             return ajaxSuccess()
@@ -139,6 +109,7 @@ def handleContentUserData(request):
 
     return
 
+
 ##
 # Get user data for content
 ##
@@ -146,12 +117,13 @@ def handleContentUserData(request):
 
 def getUserData(contentId, subContentId, dataId, userId):
     try:
-        result = h5p_content_user_data.objects.get(
-            user_id=userId, content_main_id=contentId, sub_content_id=subContentId, data_id=dataId)
+        result = h5p_content_user_data.objects.get(user_id=userId, content_main_id=contentId,
+            sub_content_id=subContentId, data_id=dataId)
     except:
         result = False
 
     return result
+
 
 ##
 # Save user data for specific content in database
@@ -165,16 +137,8 @@ def saveUserData(contentId, subContentId, dataId, preload, invalidate, data, use
     invalidate = 0 if invalidate == '0' else 1
 
     if not update:
-        h5p_content_user_data.objects.create(
-            user_id=userId,
-            content_main_id=contentId,
-            sub_content_id=subContentId,
-            data_id=dataId,
-            timestamp=time.time(),
-            data=data,
-            preloaded=preload,
-            delete_on_content_change=invalidate
-        )
+        h5p_content_user_data.objects.create(user_id=userId, content_main_id=contentId, sub_content_id=subContentId,
+            data_id=dataId, timestamp=time.time(), data=data, preloaded=preload, delete_on_content_change=invalidate)
     else:
         update.user_id = userId
         update.content_main_id = contentId
@@ -185,14 +149,16 @@ def saveUserData(contentId, subContentId, dataId, preload, invalidate, data, use
         update.delete_on_content_change = invalidate
         update.save()
 
+
 ##
 # Delete user data with specific content from database
 ##
 
 
 def deleteUserData(contentId, subContentId, dataId, userId):
-    h5p_content_user_data.objects.get(
-        user_id=userId, content_main_id=contentId, sub_content_id=subContentId, data_id=dataId).delete()
+    h5p_content_user_data.objects.get(user_id=userId, content_main_id=contentId, sub_content_id=subContentId,
+        data_id=dataId).delete()
+
 
 ##
 # Create or update H5P content
@@ -205,7 +171,7 @@ def createContent(request, content, params):
     contentId = content['id']
 
     if not editor.createDirectories(contentId):
-        print('Unable to create content directory.', 'error')
+        print(('Unable to create content directory.', 'error'))
         return False
 
     editor.processParameters(contentId, content['library'], params)
@@ -216,16 +182,14 @@ def createContent(request, content, params):
 def getLibraryProperty(library, prop='all'):
     matches = re.search('(.+)\s(\d+)\.(\d+)$', library)
     if matches:
-        libraryData = {
-            'machineName': matches.group(1),
-            'majorVersion': matches.group(2),
-            'minorVersion': matches.group(3)
-        }
+        libraryData = {'machineName': matches.group(1), 'majorVersion': matches.group(2),
+            'minorVersion': matches.group(3)}
         if prop == 'all':
             return libraryData
         elif prop == 'libraryId':
-            temp = h5p_libraries.objects.filter(machine_name=libraryData['machineName'], major_version=libraryData[
-                                                'majorVersion'], minor_version=libraryData['minorVersion']).values('library_id')
+            temp = h5p_libraries.objects.filter(machine_name=libraryData['machineName'],
+                                                major_version=libraryData['majorVersion'],
+                                                minor_version=libraryData['minorVersion']).values('library_id')
             return temp
         else:
             return libraryData[prop]
@@ -234,9 +198,7 @@ def getLibraryProperty(library, prop='all'):
 
 
 def ajaxSuccess(data=None):
-    response = {
-        'success': True
-    }
+    response = {'success': True}
     if data != None:
         response['data'] = data
 
@@ -244,9 +206,7 @@ def ajaxSuccess(data=None):
 
 
 def ajaxError(message=None):
-    response = {
-        'success': False
-    }
+    response = {'success': False}
     if message != None:
         response['message'] = message
 

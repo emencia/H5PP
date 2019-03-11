@@ -5,32 +5,14 @@ from django.core.files.base import ContentFile
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import (
-    FormView,
-    CreateView,
-    UpdateView,
-    TemplateView
-)
+from django.views.generic import (FormView, CreateView, UpdateView, TemplateView)
 
 from .forms import LibrariesForm, CreateForm
 from .models import h5p_libraries, h5p_contents, h5p_content_user_data, h5p_points
-from h5pp.h5p.h5pmodule import (
-    includeH5p,
-    h5pSetStarted,
-    h5pSetFinished,
-    h5pGetContentId,
-    h5pGetListContent,
-    h5pLoad,
-    h5pDelete,
-    h5pEmbed,
-    getUserScore,
-    uninstall
-)
+from h5pp.h5p.h5pmodule import (includeH5p, h5pSetStarted, h5pSetFinished, h5pGetContentId, h5pGetListContent, h5pLoad,
+                                h5pDelete, h5pEmbed, getUserScore, uninstall)
 from h5pp.h5p.h5pclasses import H5PDjango
-from h5pp.h5p.editor.h5peditormodule import (
-    h5peditorContent,
-    handleContentUserData
-)
+from h5pp.h5p.editor.h5peditormodule import (h5peditorContent, handleContentUserData)
 from h5pp.h5p.editor.library.h5peditorfile import H5PEditorFile
 
 
@@ -64,9 +46,7 @@ class CreateContentView(CreateView):
     form_class = CreateForm
 
     def get_form_kwargs(self):
-        kwargs = {
-            'request': self.request,
-        }
+        kwargs = {'request': self.request, }
         return kwargs
 
     def get_success_url(self, pk):
@@ -93,9 +73,7 @@ class CreateContentView(CreateView):
         # this is hacky and needs to be corrected in the form.
         newId = h5p_contents.objects.all().order_by('-content_id')[0]
 
-        return HttpResponseRedirect(
-            self.get_success_url(str(newId.content_id))
-        )
+        return HttpResponseRedirect(self.get_success_url(str(newId.content_id)))
 
 
 class UpdateContentView(FormView):
@@ -113,14 +91,11 @@ class UpdateContentView(FormView):
         self.request.GET["filtered"] = edit['filtered']
         self.request.GET['json_content'] = edit['params']
         self.request.GET['h5p_slug'] = edit['slug']
-        self.request.GET['h5p_library'] = edit['library_name'] + ' ' + \
-            str(edit['library_major_version']) + '.' + \
-            str(edit['library_minor_version'])
-        #self.request.GET['main_library'] = self.request.GET["h5p_library"]
+        self.request.GET['h5p_library'] = edit['library_name'] + ' ' + str(edit['library_major_version']) + '.' + str(
+            edit['library_minor_version'])
+        # self.request.GET['main_library'] = self.request.GET["h5p_library"]
 
-        kwargs = {
-            'request': self.request,
-        }
+        kwargs = {'request': self.request, }
         return kwargs
 
     def get_success_url(self, pk):
@@ -145,9 +120,7 @@ class UpdateContentView(FormView):
 
     def form_valid(self, form):
 
-        return HttpResponseRedirect(
-            self.get_success_url(self.pk_url_kwarg)
-        )
+        return HttpResponseRedirect(self.get_success_url(self.pk_url_kwarg))
 
 
 def createView(request, contentId=None):
@@ -160,19 +133,11 @@ def createView(request, contentId=None):
             form = CreateForm(request, request.POST, request.FILES)
             if form.is_valid():
                 if contentId is not None:
-                    return HttpResponseRedirect(
-                        reverse("h5pp:h5pcontent", args=[contentId])
-                    )
+                    return HttpResponseRedirect(reverse("h5pp:h5pcontent", args=[contentId]))
                 else:
                     newId = h5p_contents.objects.all().order_by('-content_id')[0]
-                    return HttpResponseRedirect(
-                        reverse("h5pp:h5pcontent", args=[newId.content_id])
-                    )
-            return render(
-                request,
-                'h5p/create.html',
-                {'form': form, 'data': editor}
-            )
+                    return HttpResponseRedirect(reverse("h5pp:h5pcontent", args=[newId.content_id]))
+            return render(request, 'h5p/create.html', {'form': form, 'data': editor})
 
         elif contentId is not None:
             framework = H5PDjango(request.user)
@@ -180,17 +145,12 @@ def createView(request, contentId=None):
             request.GET = request.GET.copy()
             request.GET['contentId'] = contentId
             request.GET['json_content'] = edit['params']
-            request.GET['h5p_library'] = edit['library_name'] + ' ' + \
-                                         str(edit['library_major_version']) + '.' + \
-                                         str(edit['library_minor_version'])
+            request.GET['h5p_library'] = edit['library_name'] + ' ' + str(edit['library_major_version']) + '.' + str(
+                edit['library_minor_version'])
 
         form = CreateForm(request)
 
-        return render(
-            request,
-            'h5p/create.html',
-            {'form': form, 'data': editor}
-        )
+        return render(request, 'h5p/create.html', {'form': form, 'data': editor})
 
     return HttpResponseRedirect('/h5p/login/?next=/h5p/create/')
 
@@ -215,7 +175,7 @@ class ContentDetailView(TemplateView):
 
         ctx["html"] = content["html"]
         ctx["data"] = content["data"]
-        ctx["score"] = score[0]
+        ctx["score"] = score[0] if score is not None else None
         ctx["content_id"] = self.kwargs.get("content_id")
 
         return ctx
@@ -224,8 +184,7 @@ class ContentDetailView(TemplateView):
 def contentsView(request):
     if 'contentId' in request.GET:
         try:
-            owner = h5p_contents.objects.get(
-                content_id=h5pGetContentId(request))
+            owner = h5p_contents.objects.get(content_id=h5pGetContentId(request))
         except:
             raise Http404
         h5pLoad(request)
@@ -254,25 +213,14 @@ def listView(request):
         if request.user.is_superuser and 'contentId' in request.GET:
             h5pDelete(request)
             return HttpResponseRedirect('/h5p/listContents')
-        return render(
-            request,
-            'h5p/listContents.html',
-            {'status': 'You do not have the necessary rights to delete a video.'}
-        )
+        return render(request, 'h5p/listContents.html',
+                      {'status': 'You do not have the necessary rights to delete a video.'})
 
     listContent = h5pGetListContent(request)
     if listContent and len(listContent) > 0:
-        return render(
-            request,
-            'h5p/listContents.html',
-            {'listContent': listContent}
-        )
+        return render(request, 'h5p/listContents.html', {'listContent': listContent})
 
-    return render(
-        request,
-        'h5p/listContents.html',
-        {'status': 'No contents installed.'}
-    )
+    return render(request, 'h5p/listContents.html', {'status': 'No contents installed.'})
 
 
 def scoreView(request, contentId):
@@ -282,12 +230,10 @@ def scoreView(request, contentId):
         raise Http404
     if request.user.is_authenticated:
         if request.method == 'POST' and (request.user.username == content.author or request.user.is_superuser):
-            userData = h5p_content_user_data.objects.filter(
-                content_main_id=content.content_id)
+            userData = h5p_content_user_data.objects.filter(content_main_id=content.content_id)
             if userData:
                 userData.delete()
-            userPoints = h5p_points.objects.filter(
-                content_id=content.content_id)
+            userPoints = h5p_points.objects.filter(content_id=content.content_id)
             if userPoints:
                 userPoints.delete()
 
@@ -295,16 +241,15 @@ def scoreView(request, contentId):
 
         if 'user' in request.GET and (request.user.username == content.author or request.user.is_superuser):
             user = User.objects.get(username=request.GET['user'])
-            userData = h5p_content_user_data.objects.filter(
-                user_id=user.id, content_main_id=content.content_id)
+            userData = h5p_content_user_data.objects.filter(user_id=user.id, content_main_id=content.content_id)
             if userData:
                 userData.delete()
-            userPoints = h5p_points.objects.filter(
-                uid=user.id, content_id=content.content_id)
+            userPoints = h5p_points.objects.filter(uid=user.id, content_id=content.content_id)
             if userPoints:
                 userPoints.delete()
 
-            return HttpResponseRedirect('/h5p/score/%s' % content.content_id, {'status': "%s's score has been reset !" % user.username})
+            return HttpResponseRedirect('/h5p/score/%s' % content.content_id,
+                                        {'status': "%s's score has been reset !" % user.username})
 
         if 'download' in request.GET and request.user.is_superuser:
             if request.GET['download'] == 'all':
@@ -312,15 +257,14 @@ def scoreView(request, contentId):
                 scores = ContentFile(scores)
                 response = HttpResponse(scores, 'text/plain')
                 response['Content-Length'] = scores.size
-                response[
-                    'Content-Disposition'] = 'attachment; filename="h5pp_users_score.txt"'
+                response['Content-Disposition'] = 'attachment; filename="h5pp_users_score.txt"'
             else:
                 scores = exportScore(request.GET['download'])
                 scores = ContentFile(scores)
                 response = HttpResponse(scores, 'text/plain')
                 response['Content-Length'] = scores.size
-                response[
-                    'Content-Disposition'] = 'attachment; filename="content_%s_users_score.txt"' % request.GET['download']
+                response['Content-Disposition'] = 'attachment; filename="content_%s_users_score.txt"' % request.GET[
+                    'download']
 
             return response
 
@@ -358,56 +302,35 @@ def editorAjax(request, contentId):
             framework = H5PDjango(request.user)
             editor = framework.h5pGetInstance('editor')
             data = editor.getLibraries(request)
-            return HttpResponse(
-                data,
-                content_type='application/json'
-            )
+            return HttpResponse(data, content_type='application/json')
         elif 'file' in request.FILES:
             framework = H5PDjango(request.user)
             f = H5PEditorFile(request, request.FILES, framework)
             if not f.isLoaded():
-                return HttpResponse(
-                    'File Not Found',
-                    content_type='application/json'
-                )
+                return HttpResponse('File Not Found', content_type='application/json')
 
             if f.validate():
                 core = framework.h5pGetInstance('core')
                 fileId = core.fs.saveFile(f, request.POST['contentId'])
 
             data = f.printResult()
-            return HttpResponse(
-                data,
-                content_type='application/json'
-            )
+            return HttpResponse(data, content_type='application/json')
         return HttpResponseRedirect('h5p/')
     if 'libraries' in request.GET:
-        name = request.GET[
-            'machineName'] if 'machineName' in request.GET else ''
-        major = request.GET[
-            'majorVersion'] if 'majorVersion' in request.GET else 0
-        minor = request.GET[
-            'minorVersion'] if 'minorVersion' in request.GET else 0
+        name = request.GET['machineName'] if 'machineName' in request.GET else ''
+        major = request.GET['majorVersion'] if 'majorVersion' in request.GET else 0
+        minor = request.GET['minorVersion'] if 'minorVersion' in request.GET else 0
 
         framework = H5PDjango(request.user)
         editor = framework.h5pGetInstance('editor')
         if name != '':
-            data = editor.getLibraryData(
-                name, major, minor, settings.H5P_LANGUAGE)
-            return HttpResponse(
-                data,
-                content_type='application/json'
-            )
+            data = editor.getLibraryData(name, major, minor, settings.H5P_LANGUAGE)
+            return HttpResponse(data, content_type='application/json')
         else:
             data = editor.getLibraries(request)
-            return HttpResponse(
-                data,
-                content_type='application/json'
-            )
-    return HttpResponse(
-        data,
-        content_type='application/json'
-    )
+            return HttpResponse(data, content_type='application/json')
+
+    return HttpResponse(data, content_type='application/json')
 
 
 @csrf_exempt
@@ -415,29 +338,17 @@ def ajax(request):
     if request.method == 'POST':
         if 'content-user-data' in request.GET:
             data = handleContentUserData(request)
-            return HttpResponse(
-                data,
-                content_type='application/json'
-            )
+            return HttpResponse(data, content_type='application/json')
 
         elif 'setFinished' in request.GET:
             data = h5pSetFinished(request)
-            return HttpResponse(
-                data,
-                content_type='application/json'
-            )
+            return HttpResponse(data, content_type='application/json')
 
     if 'content-user-data' in request.GET:
         data = handleContentUserData(request)
-        return HttpResponse(
-            data,
-            content_type='application/json'
-        )
+        return HttpResponse(data, content_type='application/json')
 
     elif 'user-scores' in request.GET:
         score = getUserScore(request.GET['user-scores'], None, True)
-        return HttpResponse(
-            score,
-            content_type='application/json'
-        )
+        return HttpResponse(score, content_type='application/json')
     return HttpResponseRedirect('/h5p/create')

@@ -1,2 +1,6 @@
 *.pyc
 H5PP.egg-info
+content/
+exports/
+libraries/
+tmp/

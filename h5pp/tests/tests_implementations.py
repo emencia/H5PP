@@ -230,14 +230,14 @@ class H5PClassesTestCase(TestCase):
 
         }
         interface.saveLibraryData(libraryData)
-        result = h5p_libraries.objects.filter(library_id=2).values()
+        result = list(h5p_libraries.objects.filter(library_id=2).values())
 
         self.assertTrue(result[0]['machine_name'] == 'H5P.Test2')
 
         libraryData['title'] = 'Test3'
         libraryData['libraryId'] = 2
         interface.saveLibraryData(libraryData, False)
-        result = h5p_libraries.objects.filter(library_id=2).values()
+        result = list(h5p_libraries.objects.filter(library_id=2).values())
 
         self.assertTrue(result[0]['title'] == 'Test3')
         print('test_save_library_data ---- Check')
@@ -292,7 +292,7 @@ class H5PClassesTestCase(TestCase):
         }
 
         self.assertEqual(1, interface.insertContent(content))
-        self.assertTrue(len(h5p_contents.objects.values()) > 0)
+        self.assertTrue(len(list(h5p_contents.objects.values())) > 0)
         print('test_insert_content ---- Check')
 
     def test_update_content(self):
@@ -312,7 +312,7 @@ class H5PClassesTestCase(TestCase):
         }
 
         interface.updateContent(content)
-        result = h5p_contents.objects.filter(content_id=1).values()
+        result = list(h5p_contents.objects.filter(content_id=1).values())
 
         self.assertTrue(result.exists())
 
@@ -322,7 +322,7 @@ class H5PClassesTestCase(TestCase):
         del(content['library']['majorVersion'])
         del(content['library']['minorVersion'])
         interface.updateContent(content)
-        result = h5p_contents.objects.filter(content_id=1).values()
+        result = list(h5p_contents.objects.filter(content_id=1).values())
 
         self.assertTrue(result[0]['title'] == 'ContentTest2')
         self.assertTrue(content['library']['machineName'] == 'H5P.Test')

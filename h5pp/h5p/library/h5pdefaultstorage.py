@@ -37,6 +37,7 @@ def mb_substr(s, start, length=None, encoding="UTF-8"):
     u_s = s.decode(encoding)
     return (u_s[start:(start + length)] if length else u_s[start:]).encode(encoding)
 
+
 ##
 # The default file storage class for H5P.
 ##
@@ -54,8 +55,7 @@ class H5PDefaultStorage:
     # Store the library folder.
     ##
     def saveLibrary(self, library):
-        dest = os.path.join(self.path, 'libraries',
-                            self.libraryToString(library, True))
+        dest = os.path.join(self.path, 'libraries', self.libraryToString(library, True))
 
         # Make sure destination dir doesn't exist
         self.deleteFileTree(dest)
@@ -107,10 +107,8 @@ class H5PDefaultStorage:
     ##
     def exportLibrary(self, library, target, developmentPath=None):
         folder = self.libraryToString(library, True)
-        srcPath = os.path.join(
-            'libraries', folder if developmentPath == None else developmentPath)
-        self.copyFileTree(os.path.join(self.path, srcPath),
-                          os.path.join(target, folder))
+        srcPath = os.path.join('libraries', folder if developmentPath == None else developmentPath)
+        self.copyFileTree(os.path.join(self.path, srcPath), os.path.join(target, folder))
 
     ##
     # Save export in file system
@@ -124,7 +122,7 @@ class H5PDefaultStorage:
         try:
             shutil.copy(source, os.path.join(self.path, 'exports', filename))
         except IOError as e:
-            print('Unable to copy %s' % e)
+            print(('Unable to copy %s' % e))
 
         return True
 
@@ -149,7 +147,7 @@ class H5PDefaultStorage:
     ##
     def cacheAssets(self, files, key):
 
-        for dtype, assets in files.iteritems():
+        for dtype, assets in files.items():
             if empty(assets):
                 continue  # Skip no assets
 
@@ -164,8 +162,13 @@ class H5PDefaultStorage:
                     content = content + assetContent + ';\n'
                 else:
                     # Rewrite relative URLs used inside Stylesheets
-                    content = content + re.sub('/url\([\'"]?([^"\')]+)[\'"]?\)/i', lambda matches:
-                                               matches[0] if re.search('/^(data:|([a-z0-9]+:)?\/)/i', matches[1] == 1) else 'url("../' + cssRelPath + matches[1] + '")', assetContent) + '\n'
+                    content = content + re.sub('/url\([\'"]?([^"\')]+)[\'"]?\)/i',
+                                               lambda matches: matches[0] if re.search('/^(data:|([a-z0-9]+:)?\/)/i',
+                                                                                       matches[
+                                                                                           1] == 1) else 'url("../' + cssRelPath +
+                                                                                                         matches[
+                                                                                                             1] + '")',
+                                               assetContent) + '\n'
 
             self.dirReady(os.path.join(self.path, 'cachedassets'))
             ext = 'js' if dtype == 'scripts' else 'css'
@@ -173,32 +176,20 @@ class H5PDefaultStorage:
 
             with open(self.path + outputfile, 'w') as f:
                 f.write(content)
-            files[dtype] = [{
-                'path': outputfile,
-                'version': ''
-            }]
+            files[dtype] = [{'path': outputfile, 'version': ''}]
 
     ##
     # Will check if there are cache assets available for content.
     ##
     def getCachedAssets(self, key):
-        files = {
-            'scripts': [],
-            'styles': []
-        }
+        files = {'scripts': [], 'styles': []}
         js = '/cachedassets/' + key + '.js'
         if os.path.exists(self.path + js):
-            files['scripts'].append({
-                'path': js,
-                'version': ''
-            })
+            files['scripts'].append({'path': js, 'version': ''})
 
         css = '/cachedassets/' + key + '.css'
         if os.path.exists(self.path + css):
-            files['styles'].append({
-                'path': css,
-                'version': ''
-            })
+            files['styles'].append({'path': css, 'version': ''})
 
         return None if empty(files) else files
 
@@ -222,11 +213,9 @@ class H5PDefaultStorage:
         for f in os.listdir(source):
             if (f != '.') and (f != '..') and f != '.git' and f != '.gitignore':
                 if os.path.isdir(os.path.join(source, f)):
-                    self.copyFileTree(os.path.join(source, f),
-                                      os.path.join(destination, f))
+                    self.copyFileTree(os.path.join(source, f), os.path.join(destination, f))
                 else:
-                    shutil.copy(os.path.join(source, f),
-                                os.path.join(destination, f))
+                    shutil.copy(os.path.join(source, f), os.path.join(destination, f))
 
     ##
     # Recursive function that makes sure the specified directory exists and
@@ -245,8 +234,7 @@ class H5PDefaultStorage:
             return False
 
         if not os.access(path, os.W_OK):
-            raise Exception(
-                'Unable to write to %s - check directory permissions -' % path)
+            raise Exception('Unable to write to %s - check directory permissions -' % path)
             return False
 
         return True
@@ -256,9 +244,11 @@ class H5PDefaultStorage:
     ##
     def libraryToString(self, library, folderName=False):
         if 'machine_name' in library:
-            return library['machine_name'] + ('-' if folderName else ' ') + str(library['major_version']) + '.' + str(library['minor_version'])
+            return library['machine_name'] + ('-' if folderName else ' ') + str(library['major_version']) + '.' + str(
+                library['minor_version'])
         else:
-            return library['machineName'] + ('-' if folderName else ' ') + str(library['majorVersion']) + '.' + str(library['minorVersion'])
+            return library['machineName'] + ('-' if folderName else ' ') + str(library['majorVersion']) + '.' + str(
+                library['minorVersion'])
 
     ##
     # Recursive function for removing directories.
@@ -270,8 +260,8 @@ class H5PDefaultStorage:
         files = list(set(os.listdir(pdir)).difference(['.', '..']))
 
         for f in files:
-            self.deleteFileTree(os.path.join(pdir, f)) if os.path.isdir(
-                os.path.join(pdir, f)) else os.remove(os.path.join(pdir, f))
+            self.deleteFileTree(os.path.join(pdir, f)) if os.path.isdir(os.path.join(pdir, f)) else os.remove(
+                os.path.join(pdir, f))
 
         return os.rmdir(pdir)
 
@@ -288,8 +278,7 @@ class H5PDefaultStorage:
             with open(os.path.join(path, files.getName()), 'wb+') as f:
                 f.write(filedata)
         elif filedata != None and contentid != '0':
-            path = os.path.join(path, 'content', str(
-                contentid), files.getType() + 's')
+            path = os.path.join(path, 'content', str(contentid), files.getType() + 's')
             if not os.path.exists(path):
                 os.makedirs(path)
             with open(os.path.join(path, files.getName()), 'wb+') as f:
@@ -303,8 +292,7 @@ class H5PDefaultStorage:
                 for chunk in content.chunks():
                     f.write(chunk)
         else:
-            path = os.path.join(path, 'content', str(
-                contentid), files.getType() + 's')
+            path = os.path.join(path, 'content', str(contentid), files.getType() + 's')
             content = files.getFile()
             if not os.path.exists(path):
                 os.makedirs(path)
@@ -323,8 +311,7 @@ class H5PDefaultStorage:
 
         for f in files:
             filepath = os.path.join(pdir, f)
-            self.deleteFileTree(filepath) if os.path.isdir(
-                filepath) else os.remove(filepath)
+            self.deleteFileTree(filepath) if os.path.isdir(filepath) else os.remove(filepath)
 
         return os.rmdir(pdir)
 
@@ -332,6 +319,6 @@ class H5PDefaultStorage:
     # Read file content of given file and then return it
     ##
     def getContent(self, path):
-        content = open(self.path + path, 'rb')
+        content = open(os.path.join(self.path, path), 'rb')
         result = content.read().decode('utf8', 'ignore')
         return result

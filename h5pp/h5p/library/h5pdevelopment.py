@@ -35,13 +35,13 @@ def mb_substr(s, start, length=None, encoding="UTF-8"):
     u_s = s.decode(encoding)
     return (u_s[start:(start + length)] if length else u_s[start:]).encode(encoding)
 
+
 ##
 # This is a data which uses the file system so it isn't specific to any framework.
 ##
 
 
 class H5PDevelopment:
-
     MODE_NONE = 0
     MODE_CONTENT = 1
     MODE_LIBRARY = 2
@@ -87,8 +87,7 @@ class H5PDevelopment:
                 continue  # Skip hidden stuff.
 
             libraryPath = path + '/' + i
-            libraryJSON = self.getFileContents(
-                libraryPath + '/' + '/library.json')
+            libraryJSON = self.getFileContents(libraryPath + '/' + '/library.json')
             if libraryJSON == None:
                 continue  # No JSON file, skip.
 
@@ -97,13 +96,13 @@ class H5PDevelopment:
                 continue  # Invalid JSON.
 
             # Save/update library.
-            library['libraryId'] = self.h5pF.getLibraryId(library['machineName'], library[
-                                                          'majorVersion'], library['minorVersion'])
+            library['libraryId'] = self.h5pF.getLibraryId(library['machineName'], library['majorVersion'],
+                                                          library['minorVersion'])
             self.h5pF.saveLibraryData(library, library['libraryId'] == False)
 
             library['path'] = 'development/' + i
-            self.libraries[H5PDevelopment.libraryToString(library['machineName'], library[
-                                                          'majorVersion'], library['minorVersion'])] = library
+            self.libraries[H5PDevelopment.libraryToString(library['machineName'], library['majorVersion'],
+                                                          library['minorVersion'])] = library
 
             # Go trough libraries and insert dependencies. Missing deps. Will
             # just be ignored and not available.
@@ -115,8 +114,7 @@ class H5PDevelopment:
                 types = ['preloaded', 'dynamic', 'editor']
                 for dtype in types:
                     if isset(library[dtype + 'Dependencies']):
-                        self.h5pF.saveLibraryDependencies(library['libraryId'], library[
-                                                          dtype + 'Dependencies'], dtype)
+                        self.h5pF.saveLibraryDependencies(library['libraryId'], library[dtype + 'Dependencies'], dtype)
 
             self.h5pF.unlockDependencyStorage()
 
@@ -127,16 +125,14 @@ class H5PDevelopment:
         # Get library
         ##
         def getLibrary(name, majorVersion, minorVersion):
-            library = H5PDevelopment.libraryToString(
-                name, majorVersion, minorVersion)
+            library = H5PDevelopment.libraryToString(name, majorVersion, minorVersion)
             return self.libraries[library] if isset(self.libraries[library]) == True else None
 
         ##
         # Get semantics for the given library.
         ##
         def getSemantics(name, majorVersion, minorVersion):
-            library = H5PDevelopment.libraryToString(
-                name, majorVersion, minorVersion)
+            library = H5PDevelopment.libraryToString(name, majorVersion, minorVersion)
             if isset(self.libraries[library]) == False:
                 return None
 
@@ -146,12 +142,12 @@ class H5PDevelopment:
         # Get translations for the given library
         ##
         def getLanguage(name, majorVersion, minorVersion, language):
-            library = H5PDevelopment.libraryToString(
-                name, majorVersion, minorVersion)
+            library = H5PDevelopment.libraryToString(name, majorVersion, minorVersion)
             if isset(self.libraries[library]) == False:
                 return None
 
-            return self.getFileContents(self.filesPath + self.libraries[library]['path'] + '/language/' + language + '.json')
+            return self.getFileContents(
+                self.filesPath + self.libraries[library]['path'] + '/language/' + language + '.json')
 
         ##
         # Writes library as string on the form 'name majorVersion.minorVersion'

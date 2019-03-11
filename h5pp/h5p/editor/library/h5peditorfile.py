@@ -58,7 +58,7 @@ class H5PEditorFile:
     ##
     def check(self, mimes):
         ext = self.extension.lower().replace('.', '')
-        for mime, extension in mimes.items():
+        for mime, extension in list(mimes.items()):
             if isinstance(extension, list):
                 # Multiple extensions
                 if ext in extension:
