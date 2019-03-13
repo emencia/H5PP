@@ -107,7 +107,7 @@ ns.Number.prototype.validate = function () {
     // Field must have a value
     this.$errors.append(ns.createError(ns.t('core', 'requiredProperty', {':property': ns.t('core', 'numberField')})));
   }
-  else if (decimals && !value.match(new RegExp('^-?[0-9]+(.|,)[0-9]{1,}$'))) {
+  else if (decimals && !value.match(new RegExp('^-?[0-9]+(.|,)[0-9]+$'))) {
     this.$errors.append(ns.createError(ns.t('core', 'onlyNumbers', {':property': that.field.label})));
   }
   else if (!decimals && !value.match(new RegExp('^-?[0-9]+$'))) {

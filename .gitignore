@@ -4,3 +4,4 @@ content/
 exports/
 libraries/
 tmp/
+h5p_django/h5pp_storage/

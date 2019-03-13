@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.auth.models import User
 
+from h5p.h5pevent import H5PEvent
 from h5pp.models import *
 from h5pp.h5p.h5pclasses import H5PDjango
 import urllib.parse
@@ -38,8 +39,14 @@ SCRIPTS = ["js/jquery.js", "js/h5p.js", "js/h5p-event-dispatcher.js", "js/h5p-x-
 
 
 def h5pGetExportPath(content):
-    return os.path.join(settings.MEDIA_ROOT, 'h5pp', 'exports', ((content['slug'] + '-') if 'slug' in content else ''),
-                        str(content['id']) + '.h5p')
+    # TODO Test
+    # Converted from: return os.path.join(settings.MEDIA_ROOT, 'h5pp', 'exports',
+    # ((content['slug'] + '-') if 'slug' in content else ''), str(content['id']) + '.h5p')
+
+    return settings.H5P_STORAGE_ROOT \
+           / 'exports' \
+           / ((content['slug'] + '-') if 'slug' in content else '') \
+           / (str(content['id']) + '.h5p')
 
 
 ##
@@ -97,7 +104,7 @@ def h5pUpdate(request):
 
 
 def h5pDelete(request):
-    content = h5p_contents.objects.get(content_id=request.GET['contentId'])
+    content = h5p_contents.objects.get(content_id=request.POST['contentId'])
     h5pDeleteH5PContent(request, content)
 
     if 'main_library' in request.POST:
@@ -251,10 +258,11 @@ def h5pGetCoreSettings(user):
         'baseUrl': settings.BASE_URL,
         'url': join_url([settings.MEDIA_URL, 'h5pp']),
         'postUserStatistics': user.id > 0 if user.id else False,
+        #TODO This seems to produce example.com/h5p/ajax URLs...
         'ajaxPath': join_url([Site.objects.get_current().domain, settings.H5P_URL, 'ajax']),
         'ajax': {
             'setFinished': join_url([settings.H5P_URL, 'ajax/?setFinished']),
-            'contentUserData': join_url(['settings.H5P_URL', "ajax/?content-user-data&contentId=:contentId&dataType=:dataType&subContentId=:subContentId"]),
+            'contentUserData': join_url([settings.H5P_URL, "ajax/?content-user-data&contentId=:contentId&dataType=:dataType&subContentId=:subContentId"]),
         },
         'tokens': {
             'result': createToken('result'),
@@ -334,7 +342,11 @@ def h5pAddFilesAndSettings(request, embedType):
     elif embedType == 'iframe':
         h5pAddIframeAssets(request, integration, content['id'], files)
 
-    return {'integration': json.dumps(integration), 'assets': assets, 'filesAssets': filesAssets}
+    return {
+        'integration': json.dumps(integration),
+        'assets': assets,
+        'filesAssets': filesAssets
+    }
 
 
 ##
@@ -366,12 +378,21 @@ def h5pGetContentSettings(user, content):
     for result in results:
         contentUserData[result['sub_content_id']][result['data_id']] = result['data']
 
-    contentSettings = {'library': libraryToString(content['library']), 'jsonContent': filtered,
-        'fullScreen': content['library']['fullscreen'], 'exportUrl': h5pGetExportPath(content), 'embedCode': str(
+    contentSettings = {
+        'library': libraryToString(content['library']),
+        'jsonContent': filtered,
+        'fullScreen': content['library']['fullscreen'],
+        #TODO It seems h5pGetExportPath retrieves an absolute file path, not an URL...
+        #TODO Security: Filesystem information leak
+        'exportUrl': str(h5pGetExportPath(content)),
+        'embedCode': str(
             '<iframe src="' + Site.objects.get_current().domain + settings.H5P_URL + 'embed/' + content[
                 'id'] + '" width=":w" height=":h" frameborder="0" allowFullscreen="allowfullscreen"></iframe>'),
-        'mainId': content['id'], 'url': str(content['url']), 'title': str(content['title'].encode('utf-8')),
-        'contentUserData': contentUserData, 'displayOptions': content['displayOptions']}
+        'mainId': content['id'],
+        'url': str(content['url']),
+        'title': str(content['title'].encode('utf-8')),
+        'contentUserData': contentUserData,
+        'displayOptions': content['displayOptions']}
     return contentSettings
 
 
@@ -448,37 +469,39 @@ def h5pAddIframeAssets(request, integration, contentId, files):
 
     writable = False  # Temporary, future feature
     if writable:
-        if not os.path.exists(os.path.join(settings.H5P_PATH, 'files')):
-            os.mkdir(os.path.join(settings.H5P_PATH, 'files'))
-
-        styles = list()
-        externalStyles = list()
-        for style in files['styles']:
-            if h5pIsExternalAsset(style['path']):
-                externalStyles.append(style)
-            else:
-                styles.append({'data': style['path'], 'type': 'file'})
-        integration['contents']['cid-' + contentId]['styles'] = core.getAssetsUrls(externalStyles)
-        integration['contents']['cid-' + contentId]['styles'].append(styles)
+        pass
+        # if not os.path.exists(os.path.join(settings.H5P_PATH, 'files')):
+        #     os.mkdir(os.path.join(settings.H5P_PATH, 'files'))
+        #
+        # styles = list()
+        # externalStyles = list()
+        # for style in files['styles']:
+        #     if h5pIsExternalAsset(style['path']):
+        #         externalStyles.append(style)
+        #     else:
+        #         styles.append({'data': style['path'], 'type': 'file'})
+        # integration['contents']['cid-' + contentId]['styles'] = core.getAssetsUrls(externalStyles)
+        # integration['contents']['cid-' + contentId]['styles'].append(styles)
     else:
         integration['contents']['cid-' + contentId]['styles'] = core.getAssetsUrls(files['styles'])
         # Override Css
         integration['contents']['cid-' + contentId]['styles'].append(OVERRIDE_STYLES)
 
     if writable:
-        if not os.path.exists(os.path.join(settings.H5P_PATH, 'files')):
-            os.mkdir(os.path.join(settings.H5P_PATH, 'files'))
-
-        scripts = dict()
-        externalScripts = dict()
-        for script in files['scripts']:
-            if h5pIsExternalAsset(script['path']):
-                externalScripts.append(script)
-            else:
-                scripts[script['path']] = list()
-                scripts[script['path']].append({'data': script['path'], 'type': 'file', 'preprocess': True})
-        integration['contents']['cid-' + contentId]['scripts'] = core.getAssetsUrls(externalScripts)
-        integration['contents']['cid-' + contentId]['scripts'].append(scripts)
+        pass
+        # if not os.path.exists(os.path.join(settings.H5P_PATH, 'files')):
+        #     os.mkdir(os.path.join(settings.H5P_PATH, 'files'))
+        #
+        # scripts = dict()
+        # externalScripts = dict()
+        # for script in files['scripts']:
+        #     if h5pIsExternalAsset(script['path']):
+        #         externalScripts.append(script)
+        #     else:
+        #         scripts[script['path']] = list()
+        #         scripts[script['path']].append({'data': script['path'], 'type': 'file', 'preprocess': True})
+        # integration['contents']['cid-' + contentId]['scripts'] = core.getAssetsUrls(externalScripts)
+        # integration['contents']['cid-' + contentId]['scripts'].append(scripts)
     else:
         integration['contents']['cid-' + contentId]['scripts'] = core.getAssetsUrls(files['scripts'])
 
@@ -582,9 +605,8 @@ def exportScore(contentId=None):
 
 
 def uninstall():
-    basepath = settings.MEDIA_ROOT + '/h5pp'
-    if os.path.exists(basepath):
-        shutil.rmtree(basepath)
+    if os.path.exists(settings.H5P_STORAGE_ROOT):
+        shutil.rmtree(settings.H5P_STORAGE_ROOT)
 
     h5p_contents_libraries.objects.all().delete()
     h5p_libraries.objects.all().delete()

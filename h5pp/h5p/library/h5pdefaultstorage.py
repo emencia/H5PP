@@ -55,7 +55,7 @@ class H5PDefaultStorage:
     # Store the library folder.
     ##
     def saveLibrary(self, library):
-        dest = os.path.join(self.path, 'libraries', self.libraryToString(library, True))
+        dest = self.path / 'libraries' / self.libraryToString(library, True)
 
         # Make sure destination dir doesn't exist
         self.deleteFileTree(dest)
@@ -67,7 +67,7 @@ class H5PDefaultStorage:
     # Store the content folder.
     ##
     def saveContent(self, source, pid):
-        dest = os.path.join(self.path, 'content', str(pid))
+        dest = self.path / 'content' / str(pid)
         # Remove any old content
         self.deleteFileTree(dest)
 
@@ -79,36 +79,36 @@ class H5PDefaultStorage:
     # Remove content folder.
     ##
     def deleteContent(self, pid):
-        self.deleteFileTree(os.path.join(self.path, 'content', str(pid)))
+        self.deleteFileTree(self.path / 'content' / str(pid))
 
     ##
     # Creates a stored copy of the content folder.
     ##
     def cloneContent(self, pid, newId):
-        path = os.path.join(self.path, 'content')
-        self.copyFileTree(os.path.join(path, pid), os.path.join(path, newId))
+        path = self.path / 'content'
+        self.copyFileTree(path / pid, path / newId)
 
     ##
     # Get path to a new unique tmp folder.
     ##
     def getTmpPath(self):
-        temp = os.path.join(self.path, 'tmp')
+        temp = self.path / 'tmp'
         self.dirReady(temp)
-        return os.path.join(temp, str(uuid.uuid1()))
+        return temp / str(uuid.uuid1())
 
     ##
     # Fetch content folder and save in target directory.
     ##
     def exportContent(self, pid, target):
-        self.copyFileTree(os.path.join(self.path, 'content', pid), target)
+        self.copyFileTree(self.path / 'content' / pid, target)
 
     ##
     # Fetch library folder and save in target directory.
     ##
     def exportLibrary(self, library, target, developmentPath=None):
         folder = self.libraryToString(library, True)
-        srcPath = os.path.join('libraries', folder if developmentPath == None else developmentPath)
-        self.copyFileTree(os.path.join(self.path, srcPath), os.path.join(target, folder))
+        srcPath = Path('libraries') / folder if developmentPath == None else developmentPath
+        self.copyFileTree(self.path / srcPath, Path(target) / folder)
 
     ##
     # Save export in file system
@@ -116,11 +116,11 @@ class H5PDefaultStorage:
     def saveExport(self, source, filename):
         self.deleteExport(filename)
 
-        if not self.dirReady(os.path.join(self.path, 'exports')):
+        if not self.dirReady(self.path / 'exports'):
             raise Exception('Unable to create directory for H5P export file.')
 
         try:
-            shutil.copy(source, os.path.join(self.path, 'exports', filename))
+            shutil.copy(source, self.path / 'exports' / filename)
         except IOError as e:
             print(('Unable to copy %s' % e))
 
@@ -130,7 +130,7 @@ class H5PDefaultStorage:
     # Remove given export file.
     ##
     def deleteExport(self, filename):
-        target = os.path.join(self.path, 'exports', filename)
+        target = self.path / 'exports' / filename
         if os.path.exists(target):
             os.remove(target)
 
@@ -138,7 +138,7 @@ class H5PDefaultStorage:
     # Check if the given export file exists.
     ##
     def hasExport(self, filename):
-        target = os.path.join(self.path, 'exports', filename)
+        target = self.path / 'exports' / filename
         return os.path.exists(target)
 
     ##
@@ -170,7 +170,7 @@ class H5PDefaultStorage:
                                                                                                              1] + '")',
                                                assetContent) + '\n'
 
-            self.dirReady(os.path.join(self.path, 'cachedassets'))
+            self.dirReady(self.path / 'cachedassets')
             ext = 'js' if dtype == 'scripts' else 'css'
             outputfile = '/cachedassets/' + key + '.' + ext
 
@@ -199,7 +199,7 @@ class H5PDefaultStorage:
     def deleteCachedAssets(self, keys):
         for hhash in keys:
             for ext in ['js', 'css']:
-                path = os.path.join(self.path, 'cachedassets', hhash, ext)
+                path = self.path / 'cachedassets' / hhash / ext
                 if os.path.exists(path):
                     os.remove(path)
 
@@ -207,15 +207,16 @@ class H5PDefaultStorage:
     # Recursive function for copying directories.
     ##
     def copyFileTree(self, source, destination):
+        #TODO Function can be much improved by using Python3 techniques
         if not self.dirReady(destination):
             raise Exception('Unable to copy')
 
         for f in os.listdir(source):
             if (f != '.') and (f != '..') and f != '.git' and f != '.gitignore':
-                if os.path.isdir(os.path.join(source, f)):
-                    self.copyFileTree(os.path.join(source, f), os.path.join(destination, f))
+                if os.path.isdir(Path(source) / f):
+                    self.copyFileTree(Path(source) / f, Path(destination) / f)
                 else:
-                    shutil.copy(os.path.join(source, f), os.path.join(destination, f))
+                    shutil.copy(Path(source) / f, Path(destination) / f)
 
     ##
     # Recursive function that makes sure the specified directory exists and
@@ -254,14 +255,14 @@ class H5PDefaultStorage:
     # Recursive function for removing directories.
     ##
     def deleteFileTree(self, pdir):
+        #TODO Function can and must be improved considerably using Python3 techniques
         if not os.path.isdir(pdir):
             return False
 
         files = list(set(os.listdir(pdir)).difference(['.', '..']))
 
         for f in files:
-            self.deleteFileTree(os.path.join(pdir, f)) if os.path.isdir(os.path.join(pdir, f)) else os.remove(
-                os.path.join(pdir, f))
+            self.deleteFileTree(Path(pdir / f)) if os.path.isdir(Path(pdir / f)) else os.remove(Path(pdir / f))
 
         return os.rmdir(pdir)
 
@@ -270,33 +271,33 @@ class H5PDefaultStorage:
     ##
     def saveFile(self, files, contentid, pid=None):
         filedata = files.getData()
-        path = os.path.join(settings.MEDIA_ROOT, 'h5pp')
+        base_path = settings.H5P_STORAGE_ROOT
         if filedata != None and contentid == '0':
-            path = os.path.join(path, 'editor', files.getType() + 's')
+            path = base_path / 'editor' / files.getType() + 's'
             if not os.path.exists(path):
                 os.makedirs(path)
-            with open(os.path.join(path, files.getName()), 'wb+') as f:
+            with open(path / files.getName(), 'wb+') as f:
                 f.write(filedata)
         elif filedata != None and contentid != '0':
-            path = os.path.join(path, 'content', str(contentid), files.getType() + 's')
+            path = base_path / 'content' / str(contentid) / files.getType() + 's'
             if not os.path.exists(path):
                 os.makedirs(path)
-            with open(os.path.join(path, files.getName()), 'wb+') as f:
+            with open(path / files.getName(), 'wb+') as f:
                 f.write(filedata)
         elif contentid == '0':
-            path = os.path.join(path, 'editor', files.getType() + 's')
+            path = base_path / 'editor' / files.getType() + 's'
             content = files.getFile()
             if not os.path.exists(path):
                 os.makedirs(path)
-            with open(os.path.join(path, files.getName()), 'wb+') as f:
+            with open(path / files.getName(), 'wb+') as f:
                 for chunk in content.chunks():
                     f.write(chunk)
         else:
-            path = os.path.join(path, 'content', str(contentid), files.getType() + 's')
+            path = base_path / 'content' / str(contentid) / files.getType() + 's'
             content = files.getFile()
             if not os.path.exists(path):
                 os.makedirs(path)
-            with open(os.path.join(path, files.getName()), 'wb+') as f:
+            with open(path / files.getName(), 'wb+') as f:
                 for chunk in content.chunks():
                     f.write(chunk)
 
@@ -310,7 +311,7 @@ class H5PDefaultStorage:
         files = list(set(os.listdir(pdir)).difference([".", ".."]))
 
         for f in files:
-            filepath = os.path.join(pdir, f)
+            filepath = Path(pdir) / f
             self.deleteFileTree(filepath) if os.path.isdir(filepath) else os.remove(filepath)
 
         return os.rmdir(pdir)
@@ -319,6 +320,6 @@ class H5PDefaultStorage:
     # Read file content of given file and then return it
     ##
     def getContent(self, path):
-        content = open(os.path.join(self.path, path), 'rb')
+        content = open(Path(self.path) / Path(path), 'rb')
         result = content.read().decode('utf8', 'ignore')
         return result

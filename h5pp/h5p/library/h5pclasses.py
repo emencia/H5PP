@@ -6,6 +6,8 @@ import pprint
 import glob
 import binascii
 import cgi
+from pathlib import Path
+
 import urllib3
 import urllib.request as urllib2
 import math
@@ -46,7 +48,7 @@ def mb_substr(s, start, length=None, encoding="UTF-8"):
 
 
 def file_get_contents(filename, use_include_path=0, context=None, offset=-1, maxlen=-1):
-    if filename.find("://") > 0:
+    if not isinstance(filename, Path) and filename.find("://") > 0:
         ret = http.request('GET', filename).read()
         if offset > 0:
             ret = ret[offset:]
@@ -54,6 +56,7 @@ def file_get_contents(filename, use_include_path=0, context=None, offset=-1, max
             ret = ret[:maxlen]
         return ret
     else:
+        #TODO Replace with pathlib built-ins
         fp = open(filename, "rb")
         try:
             if offset > 0:
@@ -113,10 +116,12 @@ class H5PValidator:
 
         # Create a temporary dir to extract package in.
         tmpDir = self.h5pF.getUploadedH5pFolderPath()
+
+        #MLD: Seems to be the complete path of the uploaded file
         tmpPath = self.h5pF.getUploadedH5pPath()
 
         # Only allow files with the .h5p extension.
-        if tmpPath[-3:].lower() != "h5p":
+        if tmpPath.suffix.lower() != ".h5p":
             print("The file you uploaded is not a valid HTML5 Package (It does not have the .h5p file extension)")
             self.h5pC.deleteFileTree(tmpDir)
             return False
@@ -144,7 +149,7 @@ class H5PValidator:
             if f[0:1] in [".", "_"]:
                 continue
 
-            filePath = tmpDir + "/" + f
+            filePath = tmpDir / f
             # Check for h5p.json file.
             if f.lower() == "h5p.json":
                 if skipContent:
@@ -177,7 +182,7 @@ class H5PValidator:
                     valid = False
                     continue
 
-                contentJsonData = self.getJsonData(filePath + "/" + "content.json")
+                contentJsonData = self.getJsonData(filePath / "content.json")
 
                 if contentJsonData == False:
                     print("Could not find or parse the content.json file")
@@ -285,14 +290,14 @@ class H5PValidator:
             print(("Invalid library name: %s" % (f)))
             return False
 
-        h5pData = self.getJsonData(filePath + "/" + "library.json")
+        h5pData = self.getJsonData(filePath / "library.json")
 
         if not h5pData:
             print(("Could not find library.json file with valid json format for library %s" % (f)))
             return False
 
         # validate json if a semantics file is provided
-        semanticsPath = filePath + "/" + "semantics.json"
+        semanticsPath = filePath / "semantics.json"
 
         if os.path.exists(semanticsPath):
             semantics = self.getJsonData(semanticsPath, True)
@@ -303,7 +308,7 @@ class H5PValidator:
                 h5pData["semantics"] = semantics
 
         # validate language folder if it exists
-        languagePath = filePath + "/" + "language"
+        languagePath = filePath / "language"
 
         if os.path.exists(languagePath):
             languageFiles = os.listdir(languagePath)
@@ -314,7 +319,7 @@ class H5PValidator:
                     print(("Invalid language file %s in library %s" % (languageFile, f)))
                     return False
 
-                languageJson = self.getJsonData(languagePath + "/" + languageFile, True)
+                languageJson = self.getJsonData(languagePath / languageFile, True)
 
                 if languageJson == False:
                     print(("Invalid language file %s has been included in the library %s" % (languageFile, f)))
@@ -375,7 +380,7 @@ class H5PValidator:
     def isExistingFiles(self, files, tmpDir, library):
         for f in files:
             path = f["path"].replace("\\", "/")
-            if not os.path.exists(tmpDir + "/" + library + "/" + path):
+            if not os.path.exists(tmpDir / library / path):
                 print(("The file %s is missing from library: %s" % (path, library)))
                 return False
         return True
@@ -547,7 +552,7 @@ class H5PStorage:
                     content["library"] = dep
                     break
 
-            content["params"] = file_get_contents(current_path + "/" + "content.json")
+            content["params"] = file_get_contents(current_path / "content.json")
 
             if "disable" in options:
                 content["disable"] = options["disable"]
@@ -1198,7 +1203,7 @@ class H5PCore:
         files = list(set(os.listdir(pdir)).difference([".", ".."]))
 
         for f in files:
-            self.deleteFileTree(pdir + "/" + f) if os.path.isdir(pdir + "/" + f) else os.remove(pdir + "/" + f)
+            self.deleteFileTree(pdir / f) if os.path.isdir(pdir / f) else os.remove(pdir / f)
 
         return os.rmdir(pdir)
 
@@ -1540,7 +1545,7 @@ class H5PContentValidator:
         wl_regex = "^.*\.(" + re.sub(" ", "|", whitelist) + ")$"
 
         for f in files:
-            filePath = contentPath + "/" + f
+            filePath = contentPath / f
             if os.path.isdir(filePath):
                 valid = self.validateContentFiles(filePath, isLibrary) and valid
             else:

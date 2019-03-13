@@ -58,12 +58,19 @@
 					var id = selected.getElementsByTagName('td')[3].innerText;
 					var form = document.createElement("form");
 					form.setAttribute("method", "post");
-					form.setAttribute("action", "{% url 'h5pp:h5plistContents' %}bla");
+					form.setAttribute("action", "{% url 'h5pp:h5plistContents' %}");
 					var hiddenField = document.createElement("input");
 					hiddenField.setAttribute("type", "hidden");
 					hiddenField.setAttribute("name", "csrfmiddlewaretoken");
 					hiddenField.setAttribute("value", "{{csrf_token}}");
 					form.appendChild(hiddenField);
+
+					hiddenField = document.createElement("input");
+					hiddenField.setAttribute("type", "hidden");
+					hiddenField.setAttribute("name", "contentId");
+					hiddenField.setAttribute("value", id);
+					form.appendChild(hiddenField);
+
 					document.body.appendChild(form);
 					form.submit();
 				}

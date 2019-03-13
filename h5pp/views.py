@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.contrib import messages
 from django.core.files.base import ContentFile
@@ -10,7 +11,7 @@ from django.views.generic import (FormView, CreateView, UpdateView, TemplateView
 from .forms import LibrariesForm, CreateForm
 from .models import h5p_libraries, h5p_contents, h5p_content_user_data, h5p_points
 from h5pp.h5p.h5pmodule import (includeH5p, h5pSetStarted, h5pSetFinished, h5pGetContentId, h5pGetListContent, h5pLoad,
-                                h5pDelete, h5pEmbed, getUserScore, uninstall)
+                                h5pDelete, h5pEmbed, getUserScore, uninstall, exportScore)
 from h5pp.h5p.h5pclasses import H5PDjango
 from h5pp.h5p.editor.h5peditormodule import (h5peditorContent, handleContentUserData)
 from h5pp.h5p.editor.library.h5peditorfile import H5PEditorFile
@@ -67,6 +68,8 @@ class CreateContentView(CreateView):
         if form.is_valid():
             return self.form_valid(form)
         else:
+            #TODO Somewhere around here sanitation is neglected or performed badly. On the editor page, I was able
+            # to upload a simple DOC file and have h5pp try to interpret it as a .h5p file
             return self.form_invalid(form)
 
     def form_valid(self, form):
@@ -210,7 +213,7 @@ def contentsView(request):
 
 def listView(request):
     if request.method == 'POST':
-        if request.user.is_superuser and 'contentId' in request.GET:
+        if request.user.is_superuser and 'contentId' in request.POST:
             h5pDelete(request)
             return HttpResponseRedirect('/h5p/listContents')
         return render(request, 'h5p/listContents.html',

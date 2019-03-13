@@ -43,7 +43,7 @@ class H5PDjango:
             self.interface.getUploadedH5pPath(h5p)
 
         if not hasattr(self, 'core'):
-            self.core = H5PCore(self.interface, os.path.join(settings.MEDIA_ROOT, 'h5pp'), settings.BASE_DIR, 'en',
+            self.core = H5PCore(self.interface, settings.H5P_STORAGE_ROOT, settings.BASE_DIR, 'en',
                                 True if getattr(settings, 'H5P_EXPORT') else False, False)
 
         if typ == 'validator':
@@ -60,7 +60,7 @@ class H5PDjango:
             return self.core
         elif typ == 'editor':
             storage = H5PEditorStorage()
-            return H5PDjangoEditor(self.core, storage, settings.BASE_DIR, os.path.join(settings.MEDIA_ROOT, 'h5pp'))
+            return H5PDjangoEditor(self.core, storage, settings.BASE_DIR, settings.H5P_STORAGE_ROOT)
 
     ##
     # Returns info for the current platform
@@ -324,10 +324,10 @@ class H5PDjango:
     ##
     def deleteLibrary(self, libraryId):
         library = h5p_libraries.objects.get(library_id=libraryId)
+        library_dir = library.machine_name + '-' + library.major_version + '.' + library.minor_version
 
         # Delete files
-        self.deleteFileTree(os.path.join(settings.MEDIA_ROOT, 'h5pp', 'libraries',
-                                         library.machine_name + '-' + library.major_version + '.' + library.minor_version))
+        self.deleteFileTree(settings.H5P_STORAGE_ROOT / 'libraries' / library_dir)
 
         # Delete data in database (won't delete content)
         h5p_libraries_libraries.objects.get(library_id=libraryId).delete()
@@ -349,10 +349,12 @@ class H5PDjango:
     # Update old content
     ##
     def updateContent(self, content, contentMainId=None):
-        contentId = h5p_contents.objects.filter(content_id=content['id']).values('content_id')
-        if not contentId.exists():
+        result = h5p_contents.objects.filter(content_id=content['id'])
+        if not result.exists():
             self.insertContent(content, contentMainId)
             return
+
+        contentId = result.first().content_id
 
         # Update content
         update = h5p_contents.objects.get(content_id=contentId)
@@ -485,29 +487,37 @@ class H5PDjango:
             library[typ].append({'machineName': dependency['name'], 'majorVersion': dependency['major'],
                 'minorVersion': dependency['minor']})
         if self.isInDevMode():
-            semantics = self.getSemanticsFromFile(library['machine_name'], library['major_version'],
-                                                  library['minor_version'])
-            if semantics:
-                library['semantics'] = semantics
+            # TODO Test / remove: Since devmode is documented to be unusable, remove this
+            assert(False)
+            # semantics = self.getSemanticsFromFile(library['machine_name'], library['major_version'],
+            #                                       library['minor_version'])
+            # if semantics:
+            #     library['semantics'] = semantics
 
         return library
 
-    def getSemanticsFromFile(self, machineName, majorVersion, minorVersion):
-        semanticsPath = os.path.join(settings.H5P_PATH, 'libraries',
-                                     machineName + '-' + str(majorVersion) + '.' + str(minorVersion), 'semantics.json')
-        if os.path.exists(semanticsPath):
-            semantics = semanticsPath.read()
-            if not json.loads(semantics):
-                print(('Invalid json in semantics for %s' % library['machineName']))
-            return semantics
-        return False
+    #TODO Test assumption and if correct, remove method
+    # Given that settings.H5P_PATH isn't configured and even if it were, 'libraries' isn't used anywhere H5P_PATH
+    # could conceivably point to, this method is assumed to be unused and as such, commented out. Also commented
+    # out the two sections of other methods that use it, which are only executed conditionally based on 'isInDevMode',
+    # which is documented to be unusable in its current state.
+    # def getSemanticsFromFile(self, machineName, majorVersion, minorVersion):
+    #     semanticsPath = os.path.join(settings.H5P_PATH, 'libraries',
+    #                                  machineName + '-' + str(majorVersion) + '.' + str(minorVersion), 'semantics.json')
+    #     if os.path.exists(semanticsPath):
+    #         semantics = semanticsPath.read()
+    #         if not json.loads(semantics):
+    #             print(('Invalid json in semantics for %s' % library['machineName']))
+    #         return semantics
+    #     return False
 
     ##
     # Loads library semantics
     ##
     def loadLibrarySemantics(self, machineName, majorVersion, minorVersion):
-        if self.isInDevMode():
-            semantics = self.getSemanticsFromFile(machineName, majorVersion, minorVersion)
+        if False or self.isInDevMode(): # TODO test / remove: Disabled devmode
+            semantics = ''
+            # semantics = self.getSemanticsFromFile(machineName, majorVersion, minorVersion)
         else:
             semantics = h5p_libraries.objects.filter(machine_name=machineName, major_version=majorVersion,
                 minor_version=minorVersion).values('semantics')

@@ -6,6 +6,7 @@ import json
 import re
 import os
 import urllib.parse
+from pathlib import Path
 
 from django.conf import settings
 
@@ -23,8 +24,11 @@ class H5PDjangoEditor:
         self.h5p = h5p
         self.storage = storage
         self.basePath = basePath
-        self.contentFilesDir = os.path.join(filesDir, 'content')
-        self.editorFilesDir = os.path.join(filesDir if editorFilesDir is None else editorFilesDir, 'editor')
+        self.contentFilesDir = Path(filesDir) / 'content'
+        if editorFilesDir is None:
+            self.editorFilesDir = Path(filesDir) / 'editor'
+        else:
+            self.editorFilesDir = Path(editorFilesDir) / 'editor'
 
     ##
     # This does alot of the same as getLibraries in library/h5pclasses.py. Use that instead ?
@@ -93,6 +97,7 @@ class H5PDjangoEditor:
                     # Local file
                     if not 'javascript' in libraryData:
                         libraryData['javascript'] = collections.OrderedDict()
+
                     libraryData['javascript'][url + script['path'] + script['version']] = '\n' + self.h5p.fs.getContent(
                         script['path'])
 
@@ -151,13 +156,13 @@ class H5PDjangoEditor:
     # Create directories for uploaded content
     ##
     def createDirectories(self, contentId):
-        self.contentDirectory = os.path.join(self.contentFilesDir, str(contentId))
+        self.contentDirectory = self.contentFilesDir / str(contentId)
         if not os.path.isdir(self.contentFilesDir):
-            os.mkdir(os.path.join(self.basePath, self.contentFilesDir))
+            os.mkdir(self.basePath / self.contentFilesDir)
 
         subDirectories = ['', 'files', 'images', 'videos', 'audios']
         for subDirectory in subDirectories:
-            subDirectory = os.path.join(self.contentDirectory, subDirectory)
+            subDirectory = self.contentDirectory / subDirectory
             if not os.path.isdir(subDirectory):
                 os.mkdir(subDirectory)
 
@@ -234,15 +239,15 @@ class H5PDjangoEditor:
 
         matches = re.search(self.h5p.relativePathRegExp, params['path'])
         if matches:
-            source = os.path.join(self.contentDirectory, matches.group(1), matches.group(4), matches.group(5))
-            dest = os.path.join(self.contentDirectory, matches.group(5))
+            source = self.contentDirectory / matches.group(1) / matches.group(4) / matches.group(5)
+            dest = self.contentDirectory / matches.group(5)
             if os.path.exists(source) and not os.path.exists(dest):
                 shutil.copy(source, dest)
 
             params['path'] = matches.group(5)
         else:
-            oldPath = os.path.join(self.basePath, editorPath, params['path'])
-            newPath = os.path.join(self.basePath, self.contentDirectory, params['path'])
+            oldPath = self.basePath / editorPath / Path(params['path'])
+            newPath = self.basePath / self.contentDirectory / params['path']
             if not os.path.exists(newPath) and os.path.exists(oldPath):
                 shutil.copy(oldPath, newPath)
 

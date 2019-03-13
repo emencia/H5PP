@@ -142,8 +142,10 @@ class StorageTestCase(TestCase):
 		print('setUp of StorageTestCase ---- Ready')
 
 	def test_save_library(self):
+		#TODO H5PDefaultStorage appends /h5pp/ itself? What is going on here?
 		storage = H5PDefaultStorage(settings.MEDIA_ROOT)
 		lib = list(h5p_libraries.objects.filter(library_id=1).values())[0]
+		#TODO Make test generic!
 		os.makedirs('/home/pod/H5PP/media/tmp/H5P.Test')
 		lib['uploadDirectory'] = '/home/pod/H5PP/media/tmp/H5P.Test'
 

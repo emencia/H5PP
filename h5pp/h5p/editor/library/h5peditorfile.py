@@ -15,6 +15,8 @@ class H5PEditorFile:
     # Constructor. Process data for file uploaded through the editor
     ##
     def __init__(self, request, files, framework):
+        #TODO Figure out if input sanitazion is needed, especially on 'files'
+
         if not 'field' in request.POST or request.POST['field'] == None:
             return
 
@@ -24,7 +26,7 @@ class H5PEditorFile:
         self.result = dict()
         self.field = json.loads(field)
         self.files = files['file']
-        self.path = os.path.join(settings.MEDIA_ROOT, 'h5pp', 'tmp', self.files.name)
+        self.path = settings.H5P_STORAGE_ROOT / 'tmp' / self.files.name
 
         # Check if uploaded base64 encoded file
         if 'dataURI' in request.POST and request.POST['dataURI'] != '':
@@ -167,7 +169,7 @@ class H5PEditorFile:
             if 'data' in locals() or 'data' in globals():
                 name = name + self.extension
             else:
-                matches = re.search('(?i)([a-z0-9]{1,})$', self.files.name)
+                matches = re.search('(?i)([a-z0-9]+)$', self.files.name)
                 if matches.group(1):
                     name = name + '.' + matches.group(1)
 

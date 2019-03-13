@@ -6,6 +6,8 @@ import json
 import os
 import re
 import urllib.parse
+from pathlib import PurePath
+
 from django.conf import settings
 
 from h5pp.models import h5p_content_user_data, h5p_libraries, h5p_points
@@ -56,12 +58,17 @@ def h5peditorContent(request, contentId=None):
     add.append(languageFile)
 
     contentValidator = framework.h5pGetInstance('contentvalidator')
-    editor['editor'] = {'filesPath': os.path.join(settings.MEDIA_URL, 'h5pp', 'editor'),
-        'fileIcon': {'path': "{}h5p/h5peditor/images/binary-file.png".format(settings.STATIC_URL), 'width': 50,
-            'height': 50}, 'ajaxPath': "{}editorajax/{}/".format(settings.H5P_URL, (
-            request['contentId'] if 'contentId' in request else '0')),
+    editor['editor'] = {
+        'filesPath': str(PurePath(settings.H5P_STORAGE_ROOT / 'editor')),
+        'fileIcon': {
+            'path': "{}h5p/h5peditor/images/binary-file.png".format(settings.STATIC_URL),
+            'width': 50,
+            'height': 50
+        },
+        'ajaxPath': "{}editorajax/{}/".format(settings.H5P_URL, (request['contentId'] if 'contentId' in request else '0')),
         'libraryPath': "{}h5p/h5peditor/".format(settings.STATIC_URL),
-        'copyrightSemantics': contentValidator.getCopyrightSemantics(), 'assets': assets,
+        'copyrightSemantics': contentValidator.getCopyrightSemantics(),
+        'assets': assets,
         'contentRelUrl': '../media/h5pp/content/'}
 
     return {'editor': json.dumps(editor), 'coreAssets': coreAssets, 'assets': assets, 'add': add}

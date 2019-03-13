@@ -7,23 +7,26 @@ from h5pp.models import h5p_libraries
 from h5pp.h5p.h5pclasses import H5PDjango
 from h5pp.h5p.h5pmodule import h5pInsert, h5pGetContent
 from h5pp.h5p.editor.h5peditormodule import createContent
-
+from pathlib import Path
 
 def handleUploadedFile(files, filename):
     """
     Function to handle uploading h5p file
     """
+    # TODO Figure out if filename is protected against injection attacks
 
-    tmpdir = os.path.join(settings.MEDIA_ROOT, 'h5pp', 'tmp')
+    tmpdir = settings.H5P_STORAGE_ROOT / 'tmp'
 
     if not os.path.exists(tmpdir):
         os.makedirs(tmpdir)
 
-    with open(os.path.join(tmpdir, filename), 'wb+') as destination:
+    file_path = tmpdir / filename
+
+    with open(file_path, 'wb+') as destination:
         for chunk in files.chunks():
             destination.write(chunk)
 
-    return {'folderPath': tmpdir, 'path': os.path.join(tmpdir, filename)}
+    return {'folderPath': tmpdir, 'path': file_path}
 
 
 class LibrariesForm(forms.Form):
