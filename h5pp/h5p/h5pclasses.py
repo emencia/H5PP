@@ -1,22 +1,26 @@
 # Implementation of H5PFrameworkInterface
 
 import collections
-import requests
-import django
-import time
 import json
 import re
-import os
+from datetime import time
 
-from django.conf import settings
+import requests
+import django
+
 from django.contrib import messages
 from django.db import connection
-from django.template.defaultfilters import slugify
+from django.utils.text import slugify
 
-from h5pp.models import h5p_libraries, h5p_libraries_libraries, h5p_libraries_languages, h5p_contents, h5p_counters, \
-    h5p_contents_libraries, h5p_content_user_data
+from h5p.library.H5PContentValidator import H5PContentValidator
+from h5p.library.H5PCore import H5PCore
+from h5p.library.H5PExport import H5PExport
+from h5p.library.H5PStorage import H5PStorage
+from h5p.library.H5PValidator import H5PValidator
+from h5p_django import settings
+from h5pp.models import h5p_libraries, h5p_libraries_libraries, h5p_libraries_languages, h5p_contents, \
+    h5p_contents_libraries, h5p_content_user_data, h5p_counters
 from h5pp.h5p.h5pevent import H5PEvent
-from h5pp.h5p.library.h5pclasses import *
 from h5pp.h5p.editor.h5peditorclasses import H5PDjangoEditor
 from h5pp.h5p.editor.library.h5peditorstorage import H5PEditorStorage
 
@@ -34,11 +38,11 @@ class H5PDjango:
     ##
     # Get an instance of one of the h5p library classes
     ##
-    def h5pGetInstance(self, typ, h5pdir=None, h5p=None):
+    def h5pGetInstance(self, instance_type: str, h5pdir=None, h5p=None):
         if not hasattr(self, 'interface'):
             self.interface = H5PDjango(self.user)
 
-        if h5pdir != None and h5p != None:
+        if h5pdir is not None and h5p is not None:
             self.interface.getUploadedH5pFolderPath(h5pdir)
             self.interface.getUploadedH5pPath(h5p)
 
@@ -46,19 +50,19 @@ class H5PDjango:
             self.core = H5PCore(self.interface, settings.H5P_STORAGE_ROOT, settings.BASE_DIR, 'en',
                                 True if getattr(settings, 'H5P_EXPORT') else False, False)
 
-        if typ == 'validator':
+        if instance_type == 'validator':
             return H5PValidator(self.interface, self.core)
-        elif typ == 'storage':
+        elif instance_type == 'storage':
             return H5PStorage(self.interface, self.core)
-        elif typ == 'contentvalidator':
+        elif instance_type == 'contentvalidator':
             return H5PContentValidator(self.interface, self.core)
-        elif typ == 'export':
+        elif instance_type == 'export':
             return H5PExport(self.interface, self.core)
-        elif typ == 'interface':
+        elif instance_type == 'interface':
             return self.interface
-        elif typ == 'core':
+        elif instance_type == 'core':
             return self.core
-        elif typ == 'editor':
+        elif instance_type == 'editor':
             storage = H5PEditorStorage()
             return H5PDjangoEditor(self.core, storage, settings.BASE_DIR, settings.H5P_STORAGE_ROOT)
 
@@ -75,7 +79,7 @@ class H5PDjango:
     ##
 
     def fetchExternalData(self, url, data=None):
-        if data != None:
+        if data is not None:
             response = requests.post(url, data)
         else:
             response = requests.get(url)
@@ -106,7 +110,7 @@ class H5PDjango:
     ##
     def getUploadedH5pFolderPath(self, folder=None):
         global dirpath
-        if folder != None:
+        if folder is not None:
             dirpath = folder
         return dirpath
 
@@ -115,7 +119,7 @@ class H5PDjango:
     ##
     def getUploadedH5pPath(self, files=None):
         global path
-        if files != None:
+        if files is not None:
             path = files
         return path
 
@@ -146,7 +150,7 @@ class H5PDjango:
     # If version number is not specified, the newest version will be returned
     ##
     def getLibraryId(self, machineName, majorVersion=None, minorVersion=None):
-        if majorVersion == None or minorVersion == None:
+        if majorVersion is None or minorVersion is None:
             libraryId = h5p_libraries.objects.filter(machine_name=machineName).values('library_id')
         else:
             libraryId = h5p_libraries.objects.filter(machine_name=machineName, major_version=majorVersion,
@@ -228,77 +232,83 @@ class H5PDjango:
     ##
     # Generates statistics from the event log per library
     ##
-    #TODO Disabled this function since count seems undefined. Assuming it is an unused artifact that should be removed.
-    #
-    # def getLibraryStats(self, typ):
-    #     results = h5p_counters.objects.filter(type=typ).extra(
-    #         select={'name': 'library_name', 'version': 'library_version'}).values('name', 'version')
-    #
-    #     if results.exists():
-    #         for library in results:
-    #             count[library.name + ' ' + library.version] = library.num
-    #         return count
-    #
-    #     return ''
+    @staticmethod
+    def get_library_stats(typ):
+        results = h5p_counters.objects.filter(type=typ).extra(
+            select={'name': 'library_name', 'version': 'library_version'}).values('name', 'version')
+
+        if results.exists():
+            count = []  # MLD: Added to make method function
+            for library in results:
+                count[library.name + ' ' + library.version] = library.num
+            return count
+
+        return ''
 
     ##
     # Aggregate the current number of H5P authors
     ##
-    def getNumAuthors(self):
+    # TODO Unimplemented
+    @staticmethod
+    def get_num_authors():
         return ''
 
     ##
     # Store data about a library
     # Also fills in the libraryId in the libraryData object if the object is new
     ##
-    def saveLibraryData(self, libraryData, new=True):
-        preloadedJs = self.pathsToCsv(libraryData, 'preloadedJs')
-        preloadedCss = self.pathsToCsv(libraryData, 'preloadedCss')
-        dropLibraryCss = ''
+    def save_library_data(self, library_data, new=True):
+        preloaded_js = self.pathsToCsv(library_data, 'preloadedJs')
+        preloaded_css = self.pathsToCsv(library_data, 'preloadedCss')
+        drop_library_css = ''
 
-        if 'dropLibraryCss' in libraryData:
-            for lib in libraryData['dropLibraryCss']:
+        if 'dropLibraryCss' in library_data:
+            # libs = ""  # MLD: Added to make method functional
+            for lib in library_data['dropLibraryCss']:
                 libs.append(lib['machineName'])
-            dropLibraryCss = libs.split(', ')
+            drop_library_css = libs.split(', ')
 
-        embedTypes = ''
-        if 'embedTypes' in libraryData:
-            embedTypes = libraryData['embedTypes']
-        if not 'semantics' in libraryData:
-            libraryData['semantics'] = ''
-        if not 'fullscreen' in libraryData:
-            libraryData['fullscreen'] = 0
+        embed_types = ''
+        if 'embedTypes' in library_data:
+            embed_types = library_data['embedTypes']
+        if 'semantics' not in library_data:
+            library_data['semantics'] = ''
+        if 'fullscreen' not in library_data:
+            library_data['fullscreen'] = 0
         if new:
-            libraryId = h5p_libraries.objects.create(machine_name=libraryData['machineName'],
-                title=libraryData['title'], major_version=libraryData['majorVersion'],
-                minor_version=libraryData['minorVersion'], patch_version=libraryData['patchVersion'],
-                runnable=libraryData['runnable'], fullscreen=libraryData['fullscreen'], embed_types=embedTypes,
-                preloaded_js=preloadedJs, preloaded_css=preloadedCss, drop_library_css=dropLibraryCss,
-                semantics=libraryData['semantics'])
-            libraryData['libraryId'] = libraryId.library_id
+            library_id = h5p_libraries.objects.create(
+                machine_name=library_data['machineName'],
+                title=library_data['title'], major_version=library_data['majorVersion'],
+                minor_version=library_data['minorVersion'], patch_version=library_data['patchVersion'],
+                runnable=library_data['runnable'], fullscreen=library_data['fullscreen'], embed_types=embed_types,
+                preloaded_js=preloaded_js, preloaded_css=preloaded_css, drop_library_css=drop_library_css,
+                semantics=library_data['semantics']
+            )
+
+            library_data['libraryId'] = library_id.library_id
         else:
-            library = h5p_libraries.objects.get(library_id=libraryData['libraryId'])
-            library.title = libraryData['title']
-            library.patch_version = libraryData['patchVersion']
-            library.runnable = libraryData['runnable']
-            library.fullscreen = libraryData['fullscreen']
-            library.embed_types = embedTypes
-            library.preloaded_js = preloadedJs
-            library.preloaded_css = preloadedCss
-            library.drop_library_css = dropLibraryCss
-            library.semantics = libraryData['semantics']
+            library = h5p_libraries.objects.get(library_id=library_data['libraryId'])
+            library.title = library_data['title']
+            library.patch_version = library_data['patchVersion']
+            library.runnable = library_data['runnable']
+            library.fullscreen = library_data['fullscreen']
+            library.embed_types = embed_types
+            library.preloaded_js = preloaded_js
+            library.preloaded_css = preloaded_css
+            library.drop_library_css = drop_library_css
+            library.semantics = library_data['semantics']
             library.save()
 
-            self.deleteLibraryDependencies(libraryData['libraryId'])
+            self.deleteLibraryDependencies(library_data['libraryId'])
 
         # Log library, installed or updated
-        event = H5PEvent(self.user, 'library', ('create' if new else 'update'), None, None, libraryData['machineName'],
-                         str(libraryData['majorVersion']) + '.' + str(libraryData['minorVersion']))
+        event = H5PEvent(self.user, 'library', ('create' if new else 'update'), None, None, library_data['machineName'],
+                         str(library_data['majorVersion']) + '.' + str(library_data['minorVersion']))
 
-        h5p_libraries_languages.objects.filter(library_id=libraryData['libraryId']).delete()
-        if 'language' in libraryData:
-            for languageCode, languageJson in list(libraryData['language'].items()):
-                pid = h5p_libraries_languages.objects.create(library_id=libraryData['libraryId'],
+        h5p_libraries_languages.objects.filter(library_id=library_data['libraryId']).delete()
+        if 'language' in library_data:
+            for languageCode, languageJson in list(library_data['language'].items()):
+                pid = h5p_libraries_languages.objects.create(library_id=library_data['libraryId'],
                                                              language_code=languageCode, language_json=languageJson)
 
     ##
@@ -322,17 +332,17 @@ class H5PDjango:
     ##
     # Delete a library from database and file system
     ##
-    def deleteLibrary(self, libraryId):
-        library = h5p_libraries.objects.get(library_id=libraryId)
+    def delete_library(self, library_id):
+        library = h5p_libraries.objects.get(library_id=library_id)
         library_dir = library.machine_name + '-' + library.major_version + '.' + library.minor_version
 
         # Delete files
-        self.deleteFileTree(settings.H5P_STORAGE_ROOT / 'libraries' / library_dir)
+        self.core.delete_file_tree(settings.H5P_STORAGE_ROOT / 'libraries' / library_dir)
 
         # Delete data in database (won't delete content)
-        h5p_libraries_libraries.objects.get(library_id=libraryId).delete()
-        h5p_libraries_languages.objects.get(library_id=libraryId).delete()
-        h5p_libraries.objects.get(library_id=libraryId).delete()
+        h5p_libraries_libraries.objects.get(library_id=library_id).delete()
+        h5p_libraries_languages.objects.get(library_id=library_id).delete()
+        h5p_libraries.objects.get(library_id=library_id).delete()
 
     ##
     # Save what libraries a library is depending on
@@ -482,13 +492,13 @@ class H5PDjango:
 
         for dependency in result:
             typ = dependency['type'].replace("'", "") + 'Dependencies'
-            if not typ in library:
+            if typ not in library:
                 library[typ] = list()
             library[typ].append({'machineName': dependency['name'], 'majorVersion': dependency['major'],
                 'minorVersion': dependency['minor']})
         if self.isInDevMode():
             # TODO Test / remove: Since devmode is documented to be unusable, remove this
-            assert(False)
+            assert False
             # semantics = self.getSemanticsFromFile(library['machine_name'], library['major_version'],
             #                                       library['minor_version'])
             # if semantics:
@@ -496,14 +506,14 @@ class H5PDjango:
 
         return library
 
-    #TODO Test assumption and if correct, remove method
+    # TODO Test assumption and if correct, remove method
     # Given that settings.H5P_PATH isn't configured and even if it were, 'libraries' isn't used anywhere H5P_PATH
     # could conceivably point to, this method is assumed to be unused and as such, commented out. Also commented
     # out the two sections of other methods that use it, which are only executed conditionally based on 'isInDevMode',
     # which is documented to be unusable in its current state.
     # def getSemanticsFromFile(self, machineName, majorVersion, minorVersion):
     #     semanticsPath = os.path.join(settings.H5P_PATH, 'libraries',
-    #                                  machineName + '-' + str(majorVersion) + '.' + str(minorVersion), 'semantics.json')
+    #                                machineName + '-' + str(majorVersion) + '.' + str(minorVersion), 'semantics.json')
     #     if os.path.exists(semanticsPath):
     #         semantics = semanticsPath.read()
     #         if not json.loads(semantics):
@@ -515,7 +525,7 @@ class H5PDjango:
     # Loads library semantics
     ##
     def loadLibrarySemantics(self, machineName, majorVersion, minorVersion):
-        if False or self.isInDevMode(): # TODO test / remove: Disabled devmode
+        if False or self.isInDevMode():  # TODO test / remove: Disabled devmode
             semantics = ''
             # semantics = self.getSemanticsFromFile(machineName, majorVersion, minorVersion)
         else:
@@ -571,7 +581,7 @@ class H5PDjango:
     ##
     def loadContentDependencies(self, pid, typ=None):
         cursor = connection.cursor()
-        if typ != None:
+        if typ is not None:
             cursor.execute("""
 				SELECT hl.library_id,
 						hl.machine_name,
@@ -633,16 +643,17 @@ class H5PDjango:
     def setOption(self, name, value):
         setattr(settings, name, value)
 
-    ##
-    # Convert variables to fit our DB
-    ##
-    def camelToString(self, inputValue):
-        matches = re.search('[a-z0-9]([A-Z])[a-z0-9]', inputValue)
-        if matches:
-            matches = re.sub('[a-z0-9]([A-Z])[a-z0-9]', matches.group(1), inputValue)
-            return result.lower()
-        else:
-            return inputValue
+    # TODO Remove seemingly unused and faulty method
+    # ##
+    # # Convert variables to fit our DB
+    # ##
+    # def camelToString(self, inputValue):
+    #     matches = re.search('[a-z0-9]([A-Z])[a-z0-9]', inputValue)
+    #     if matches:
+    #         matches = re.sub('[a-z0-9]([A-Z])[a-z0-9]', matches.group(1), inputValue)
+    #         return result.lower()
+    #     else:
+    #         return inputValue
 
     ##
     # This will update selected fields on the given content
@@ -671,14 +682,16 @@ class H5PDjango:
     ##
     # Get number of contents that has to get their content dependencies rebuilt
     ##
-    def getNumNotFiltered(self):
-        return int(h5p_contents.objects.filter(filtered='', main_library_id__level__gt=0).values('content_id').count())
+    # TODO Remove unused method
+    # def getNumNotFiltered(self):
+    #     return int(h5p_contents.objects.filter(filtered='', main_library_id__level__gt=0).values('content_id').count())
 
-    ##
-    # Get number of contents using library as main library
-    ##
-    def getNumContent(self, libraryId):
-        return int(h5p_contents.objects.filter(main_library_id=libraryId).values('content_id').count())
+    # ##
+    # # Get number of contents using library as main library
+    # ##
+    # # TODO Remove unused method
+    # def getNumContent(self, libraryId):
+    #     return int(h5p_contents.objects.filter(main_library_id=libraryId).values('content_id').count())
 
     ##
     # Get number of contents

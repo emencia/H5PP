@@ -1,15 +1,8 @@
 # -*-coding:Latin-1 -*
 
 import os
-import zipfile
-import re
 import json
-import pprint
-import glob
-import hashlib
-import cgi
-
-is_array = lambda var: isinstance(var, (list, tuple))
+from pathlib import Path
 
 
 def empty(variable):
@@ -21,19 +14,20 @@ def empty(variable):
 def isset(variable):
     return variable in locals() or variable in globals()
 
+# TODO Remove seemingly unused method
+# def substr_replace(subject, replace, start, length):
+#     if length is None:
+#         return subject[:start] + replace
+#     elif length < 0:
+#         return subject[:start] + replace + subject[length:]
+#     else:
+#         return subject[:start] + replace + subject[start + length:]
 
-def substr_replace(subject, replace, start, length):
-    if length == None:
-        return subject[:start] + replace
-    elif length < 0:
-        return subject[:start] + replace + subject[length:]
-    else:
-        return subject[:start] + replace + subject[start + length:]
 
-
-def mb_substr(s, start, length=None, encoding="UTF-8"):
-    u_s = s.decode(encoding)
-    return (u_s[start:(start + length)] if length else u_s[start:]).encode(encoding)
+# TODO Remove seemingly unused method
+# def mb_substr(s, start, length=None, encoding="UTF-8"):
+#     u_s = s.decode(encoding)
+#     return (u_s[start:(start + length)] if length else u_s[start:]).encode(encoding)
 
 
 ##
@@ -49,24 +43,26 @@ class H5PDevelopment:
     ##
     # Constructor of H5PDevelopment
     ##
-    def __init__(self, H5PFramework, filesPath, language, libraries=None):
-        self.h5pF = H5PFramework
+    def __init__(self, framework, files_path: Path, language, libraries=None):
+        self.h5p_framework = framework
         self.language = language
-        self.filesPath = filesPath
-        if libraries != None:
+        self.filesPath = files_path
+        if libraries is not None:
             self.libraries = libraries
         else:
-            self.findLibraries(filesPath + '/development')
+            self.find_libraries(files_path / 'development')
 
     ##
     # Get contents of file.
     ##
-    def getFileContents(f):
-        if os.path.exists(f) == False:
+    # TODO Rewrite to use pathlib
+    @staticmethod
+    def get_file_contents(path: Path):
+        if not os.path.exists(path):
             return None
 
-        contents = open(f).read(1000)
-        if contents == False:
+        contents = open(str(path)).read(1000)
+        if not contents:
             return None
 
         return contents
@@ -74,10 +70,10 @@ class H5PDevelopment:
     ##
     # Scans development directory and fin all libraries.
     ##
-    def findLibraries(path):
+    def find_libraries(self, path):
         self.libraries = []
 
-        if os.path.isdir(path) == False:
+        if not os.path.isdir(path):
             return
 
         contents = os.listdir(path)
@@ -86,71 +82,77 @@ class H5PDevelopment:
             if i[0] == '.':
                 continue  # Skip hidden stuff.
 
-            libraryPath = path + '/' + i
-            libraryJSON = self.getFileContents(libraryPath + '/' + '/library.json')
-            if libraryJSON == None:
+            library_path = path / i / 'library.json'
+            library_json = self.get_file_contents(library_path)
+            if library_json is None:
                 continue  # No JSON file, skip.
 
-            library = json.loads(libraryJSON)
-            if library == None:
+            library = json.loads(library_json)
+            if library is None:
                 continue  # Invalid JSON.
 
             # Save/update library.
-            library['libraryId'] = self.h5pF.getLibraryId(library['machineName'], library['majorVersion'],
-                                                          library['minorVersion'])
-            self.h5pF.saveLibraryData(library, library['libraryId'] == False)
+            library['libraryId'] = self.h5p_framework.getLibraryId(library['machineName'], library['majorVersion'],
+                                                                   library['minorVersion'])
+            self.h5p_framework.save_library_data(library, (not library['libraryId']))
 
-            library['path'] = 'development/' + i
-            self.libraries[H5PDevelopment.libraryToString(library['machineName'], library['majorVersion'],
-                                                          library['minorVersion'])] = library
+            library['path'] = Path('development') / i
+            self.libraries[H5PDevelopment.library_to_string(library['machineName'], library['majorVersion'],
+                                                            library['minorVersion'])] = library
 
             # Go trough libraries and insert dependencies. Missing deps. Will
             # just be ignored and not available.
-            self.h5pF.lockDependencyStorage()
+            self.h5p_framework.lockDependencyStorage()
             for library in self.libraries:
-                self.h5pF.deleteLibraryDependencies(library['libraryId'])
+                self.h5p_framework.deleteLibraryDependencies(library['libraryId'])
                 # This isn't optimal, but without it we would get duplicate
                 # warnings.
                 types = ['preloaded', 'dynamic', 'editor']
                 for dtype in types:
                     if isset(library[dtype + 'Dependencies']):
-                        self.h5pF.saveLibraryDependencies(library['libraryId'], library[dtype + 'Dependencies'], dtype)
+                        self.h5p_framework.saveLibraryDependencies(
+                            library['libraryId'], library[dtype + 'Dependencies'], dtype
+                        )
 
-            self.h5pF.unlockDependencyStorage()
+            self.h5p_framework.unlockDependencyStorage()
 
-        def getLibraries():
-            return self.libraries
+        # TODO Remove seemingly unused method
+        # def get_libraries():
+            # return self.libraries
 
         ##
         # Get library
         ##
-        def getLibrary(name, majorVersion, minorVersion):
-            library = H5PDevelopment.libraryToString(name, majorVersion, minorVersion)
-            return self.libraries[library] if isset(self.libraries[library]) == True else None
+        # TODO Remove seemingly unused method
+        # def get_library(name, major_version, minor_version):
+        #     lib = H5PDevelopment.library_to_string(name, major_version, minor_version)
+        #     return self.libraries[lib] if isset(self.libraries[lib]) else None
 
         ##
         # Get semantics for the given library.
         ##
-        def getSemantics(name, majorVersion, minorVersion):
-            library = H5PDevelopment.libraryToString(name, majorVersion, minorVersion)
-            if isset(self.libraries[library]) == False:
-                return None
+        # TODO Remove seemingly unused method
+        # def get_semantics(name, major_version, minor_version):
+        #     lib = H5PDevelopment.library_to_string(name, major_version, minor_version)
+        #     if not isset(self.libraries[lib]):
+        #         return None
+        #
+        #     return self.get_file_contents(self.filesPath + self.libraries[lib]['path'] + '/semantics.json')
 
-            return self.getFileContents(self.filesPath + self.libraries[library]['path'] + '/semantics.json')
+        # ##
+        # # Get translations for the given library
+        # TODO Remove seemingly unused method
+        # def get_language(name, major_version, minor_version, language):
+        #     lib = H5PDevelopment.library_to_string(name, major_version, minor_version)
+        #     if not isset(self.libraries[lib]):
+        #         return None
+        #
+        #     return self.get_file_contents(
+        #         self.filesPath + self.libraries[lib]['path'] + '/language/' + language + '.json')
 
-        ##
-        # Get translations for the given library
-        ##
-        def getLanguage(name, majorVersion, minorVersion, language):
-            library = H5PDevelopment.libraryToString(name, majorVersion, minorVersion)
-            if isset(self.libraries[library]) == False:
-                return None
-
-            return self.getFileContents(
-                self.filesPath + self.libraries[library]['path'] + '/language/' + language + '.json')
-
-        ##
-        # Writes library as string on the form 'name majorVersion.minorVersion'
-        ##
-        def libraryToString(name, majorVersion, minorVersion):
-            return name + ' ' + majorVersion + '.' + minorVersion
+    ##
+    # Writes library as string on the form 'name majorVersion.minorVersion'
+    ##
+    @staticmethod
+    def library_to_string(name, major_version, minor_version):
+        return name + ' ' + major_version + '.' + minor_version

@@ -144,7 +144,7 @@ ns.Library.prototype.librariesLoaded = function (libList) {
 /**
  * Load the selected library.
  *
- * @alias H5PEditor.Library#loadLibrary
+ * @alias H5PEditor.Library#load_library
  * @param {string} libraryName On the form machineName.majorVersion.minorVersion
  * @param {boolean} [preserveParams]
  */

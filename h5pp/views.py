@@ -1,17 +1,16 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import (FormView, CreateView, UpdateView, TemplateView)
+from django.views.generic import (FormView, CreateView, TemplateView)
 
 from .forms import LibrariesForm, CreateForm
 from .models import h5p_libraries, h5p_contents, h5p_content_user_data, h5p_points
-from h5pp.h5p.h5pmodule import (includeH5p, h5pSetStarted, h5pSetFinished, h5pGetContentId, h5pGetListContent, h5pLoad,
-                                h5pDelete, h5pEmbed, getUserScore, uninstall, exportScore)
+from h5pp.h5p.h5pmodule import (include_h5p, h5p_set_started, h5p_set_finished, h5p_get_content_id, h5p_get_list_content, h5p_load,
+                                h5p_delete, h5p_embed, get_user_score, uninstall, export_score)
 from h5pp.h5p.h5pclasses import H5PDjango
 from h5pp.h5p.editor.h5peditormodule import (h5peditorContent, handleContentUserData)
 from h5pp.h5p.editor.library.h5peditorfile import H5PEditorFile
@@ -68,7 +67,7 @@ class CreateContentView(CreateView):
         if form.is_valid():
             return self.form_valid(form)
         else:
-            #TODO Somewhere around here sanitation is neglected or performed badly. On the editor page, I was able
+            # TODO Somewhere around here sanitation is neglected or performed badly. On the editor page, I was able
             # to upload a simple DOC file and have h5pp try to interpret it as a .h5p file
             return self.form_invalid(form)
 
@@ -130,7 +129,7 @@ def createView(request, contentId=None):
     if request.user.is_authenticated:
         editor = h5peditorContent(request, contentId)
         if request.method == 'POST':
-            if contentId != None:
+            if contentId is not None:
                 request.POST = request.POST.copy()
                 request.POST['contentId'] = contentId
             form = CreateForm(request, request.POST, request.FILES)
@@ -166,10 +165,10 @@ class ContentDetailView(TemplateView):
 
         self.request.GET = self.request.GET.copy()
         self.request.GET["contentId"] = self.kwargs.get("content_id")
-        h5pLoad(self.request)
-        content = includeH5p(self.request)
-        h5pSetStarted(self.request.user, self.kwargs.get("content_id"))
-        score = getUserScore(self.kwargs.get("content_id"), self.request.user)
+        h5p_load(self.request)
+        content = include_h5p(self.request)
+        h5p_set_started(self.request.user, self.kwargs.get("content_id"))
+        score = get_user_score(self.kwargs.get("content_id"), self.request.user)
 
         if "html" not in content:
             ctx["html"] = "<div>Sorry, preview of H5P content is not yet available.</div>"
@@ -187,11 +186,11 @@ class ContentDetailView(TemplateView):
 def contentsView(request):
     if 'contentId' in request.GET:
         try:
-            owner = h5p_contents.objects.get(content_id=h5pGetContentId(request))
+            owner = h5p_contents.objects.get(content_id=h5p_get_content_id(request))
         except:
             raise Http404
-        h5pLoad(request)
-        content = includeH5p(request)
+        h5p_load(request)
+        content = include_h5p(request)
         score = None
 
         if "html" not in content:
@@ -199,8 +198,8 @@ def contentsView(request):
             return render(request, 'h5p/content.html', {'html': html})
         else:
             if request.user.is_authenticated():
-                h5pSetStarted(request.user, h5pGetContentId(request))
-                score = getUserScore(h5pGetContentId(request), request.user)
+                h5p_set_started(request.user, h5p_get_content_id(request))
+                score = get_user_score(h5p_get_content_id(request), request.user)
 
                 return render(request, 'h5p/content.html',
                               {'html': content['html'], 'data': content['data'], 'owner': owner.author,
@@ -214,12 +213,12 @@ def contentsView(request):
 def listView(request):
     if request.method == 'POST':
         if request.user.is_superuser and 'contentId' in request.POST:
-            h5pDelete(request)
+            h5p_delete(request)
             return HttpResponseRedirect('/h5p/listContents')
         return render(request, 'h5p/listContents.html',
                       {'status': 'You do not have the necessary rights to delete a video.'})
 
-    listContent = h5pGetListContent(request)
+    listContent = h5p_get_list_content(request)
     if listContent and len(listContent) > 0:
         return render(request, 'h5p/listContents.html', {'listContent': listContent})
 
@@ -256,13 +255,13 @@ def scoreView(request, contentId):
 
         if 'download' in request.GET and request.user.is_superuser:
             if request.GET['download'] == 'all':
-                scores = exportScore()
+                scores = export_score()
                 scores = ContentFile(scores)
                 response = HttpResponse(scores, 'text/plain')
                 response['Content-Length'] = scores.size
                 response['Content-Disposition'] = 'attachment; filename="h5pp_users_score.txt"'
             else:
-                scores = exportScore(request.GET['download'])
+                scores = export_score(request.GET['download'])
                 scores = ContentFile(scores)
                 response = HttpResponse(scores, 'text/plain')
                 response['Content-Length'] = scores.size
@@ -275,7 +274,7 @@ def scoreView(request, contentId):
         if request.user.username == content.author or request.user.is_superuser:
             listScore['owner'] = True
 
-        listScore['data'] = getUserScore(content.content_id)
+        listScore['data'] = get_user_score(content.content_id)
         if listScore['data'] and listScore['data'].count() > 0:
             return render(request, 'h5p/score.html', {'listScore': listScore, 'content': content})
 
@@ -286,12 +285,12 @@ def scoreView(request, contentId):
 
 def embedView(request):
     if 'contentId' in request.GET:
-        h5pLoad(request)
-        embed = h5pEmbed(request)
+        h5p_load(request)
+        embed = h5p_embed(request)
         score = None
         if request.user.is_authenticated:
-            h5pSetStarted(request.user, h5pGetContentId(request))
-            score = getUserScore(request.GET['contentId'], request.user)[0]
+            h5p_set_started(request.user, h5p_get_content_id(request))
+            score = get_user_score(request.GET['contentId'], request.user)[0]
         return render(request, 'h5p/embed.html', {'embed': embed, 'score': score})
 
     return HttpResponseForbidden()
@@ -314,7 +313,7 @@ def editorAjax(request, contentId):
 
             if f.validate():
                 core = framework.h5pGetInstance('core')
-                fileId = core.fs.saveFile(f, request.POST['contentId'])
+                fileId = core.fs.save_file(f, request.POST['contentId'])
 
             data = f.printResult()
             return HttpResponse(data, content_type='application/json')
@@ -344,7 +343,7 @@ def ajax(request):
             return HttpResponse(data, content_type='application/json')
 
         elif 'setFinished' in request.GET:
-            data = h5pSetFinished(request)
+            data = h5p_set_finished(request)
             return HttpResponse(data, content_type='application/json')
 
     if 'content-user-data' in request.GET:
@@ -352,6 +351,6 @@ def ajax(request):
         return HttpResponse(data, content_type='application/json')
 
     elif 'user-scores' in request.GET:
-        score = getUserScore(request.GET['user-scores'], None, True)
+        score = get_user_score(request.GET['user-scores'], None, True)
         return HttpResponse(score, content_type='application/json')
     return HttpResponseRedirect('/h5p/create')

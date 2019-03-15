@@ -1,6 +1,5 @@
 # Django module h5p editor
 
-import shutil
 import time
 import json
 import os
@@ -10,8 +9,8 @@ from pathlib import PurePath
 
 from django.conf import settings
 
-from h5pp.models import h5p_content_user_data, h5p_libraries, h5p_points
-from h5pp.h5p.h5pmodule import h5pAddCoreAssets, h5pAddFilesAndSettings
+from h5pp.models import h5p_content_user_data, h5p_libraries
+from h5pp.h5p.h5pmodule import h5p_add_core_assets, h5p_add_files_and_settings
 from h5pp.h5p.h5pclasses import H5PDjango
 
 STYLES = ["libs/darkroom.css", "styles/css/application.css"]
@@ -30,9 +29,9 @@ SCRIPTS = ["scripts/h5peditor.js", "scripts/h5peditor-semantic-structure.js", "s
 
 
 def h5peditorContent(request, contentId=None):
-    assets = h5pAddCoreAssets()
-    coreAssets = h5pAddCoreAssets()
-    editor = h5pAddFilesAndSettings(request, True)
+    assets = h5p_add_core_assets()
+    coreAssets = h5p_add_core_assets()
+    editor = h5p_add_files_and_settings(request, True)
     framework = H5PDjango(request.user)
     add = list()
 
@@ -86,7 +85,7 @@ def handleContentUserData(request):
     subContentId = request.GET['subContentId']
     dataId = request.GET['dataType']
 
-    if contentId == None or dataId == None or subContentId == None:
+    if contentId is None or dataId is None or subContentId is None:
         return ajaxError('Missing parameters')
 
     if 'data' in request.POST and 'preload' in request.POST and 'invalidate' in request.POST:
@@ -95,7 +94,7 @@ def handleContentUserData(request):
         invalidate = request.POST['invalidate']
 
         # Saving data
-        if data != None and preload != None and invalidate != None:
+        if data is not None and preload is not None and invalidate is not None:
             if data == '0':
                 # Delete user data
                 deleteUserData(contentId, subContentId, dataId, request.user.id)
@@ -206,7 +205,7 @@ def getLibraryProperty(library, prop='all'):
 
 def ajaxSuccess(data=None):
     response = {'success': True}
-    if data != None:
+    if data is not None:
         response['data'] = data
 
     return json.dumps(response)
@@ -214,7 +213,7 @@ def ajaxSuccess(data=None):
 
 def ajaxError(message=None):
     response = {'success': False}
-    if message != None:
+    if message is not None:
         response['message'] = message
 
     return json.dumps(response)

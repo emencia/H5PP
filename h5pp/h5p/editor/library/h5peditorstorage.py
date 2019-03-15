@@ -11,7 +11,7 @@ class H5PEditorStorage:
     # Decides which content types the editor should have
     ##
     def getLibraries(self, libraries=None):
-        if libraries != None:
+        if libraries is not None:
             librariesWithDetails = list()
             for library in libraries:
                 details = h5p_libraries.objects.filter(machine_name=library['name'], major_version=library[

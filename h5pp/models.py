@@ -54,7 +54,7 @@ class h5p_libraries(models.Model):
         return self.machine_name
 
     def __str__(self):
-        return "%s" % (self.machine_name)
+        return "%s" % self.machine_name
 
 
 # Stores information about library dependencies

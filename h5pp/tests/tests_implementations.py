@@ -1,6 +1,4 @@
 from django.test import TestCase
-from django.conf import settings
-from django.contrib.auth.models import User
 from h5pp.h5p.h5pmodule import *
 from h5pp.h5p.h5pclasses import H5PDjango
 from h5pp.h5p.library.h5pclasses import *
@@ -43,17 +41,17 @@ class H5pModuleTestCase(TestCase):
             'slug': 'interactive-video'
         }
         self.assertEqual(
-            '/home/pod/H5PP/media/h5pp/exports/interactive-video-1.h5p', h5pGetExportPath(content))
+            '/home/pod/H5PP/media/h5pp/exports/interactive-video-1.h5p', h5p_get_export_path(content))
         content = {
             'id': 2
         }
         self.assertEqual('/home/pod/H5PP/media/h5pp/exports/2.h5p',
-                         h5pGetExportPath(content))
+                         h5p_get_export_path(content))
         print('test_exportpath ---- Check')
 
     def test_library_details_title(self):
-        self.assertEqual({'title': 'Test'}, h5pLibraryDetailsTitle(1))
-        self.assertEqual(None, h5pLibraryDetailsTitle(2))
+        self.assertEqual({'title': 'Test'}, h5p_library_details_title(1))
+        self.assertEqual(None, h5p_library_details_title(2))
         print('test_library_details_title ---- Check')
 
     def test_add_core_assets(self):
@@ -74,12 +72,12 @@ class H5pModuleTestCase(TestCase):
                 "/static/h5p/styles/h5p-core-button.css"
             ]
         }
-        self.assertEqual(assets, h5pAddCoreAssets())
+        self.assertEqual(assets, h5p_add_core_assets())
         print('test_add_core_assets ---- Check')
 
     def test_get_core_settings(self):
         user = User.objects.get(username='titi')
-        core = h5pGetCoreSettings(user)
+        core = h5p_get_core_settings(user)
 
         self.assertTrue(core['postUserStatistics'])
         self.assertTrue('user' in core)
@@ -168,7 +166,7 @@ class H5PClassesTestCase(TestCase):
 
         h5p_libraries.objects.filter(library_id=1).delete()
 
-        self.assertTrue(interface.getLibraryId('H5P.Test') == None)
+        self.assertTrue(interface.getLibraryId('H5P.Test') is None)
         print('test_get_library_id ---- Check')
 
     def test_is_patched_library(self):
@@ -229,14 +227,14 @@ class H5PClassesTestCase(TestCase):
             ],
 
         }
-        interface.saveLibraryData(libraryData)
+        interface.save_library_data(libraryData)
         result = list(h5p_libraries.objects.filter(library_id=2).values())
 
         self.assertTrue(result[0]['machine_name'] == 'H5P.Test2')
 
         libraryData['title'] = 'Test3'
         libraryData['libraryId'] = 2
-        interface.saveLibraryData(libraryData, False)
+        interface.save_library_data(libraryData, False)
         result = list(h5p_libraries.objects.filter(library_id=2).values())
 
         self.assertTrue(result[0]['title'] == 'Test3')
@@ -312,7 +310,7 @@ class H5PClassesTestCase(TestCase):
         }
 
         interface.updateContent(content)
-        result = list(h5p_contents.objects.filter(content_id=1).values())
+        result = h5p_contents.objects.filter(content_id=1).values()
 
         self.assertTrue(result.exists())
 

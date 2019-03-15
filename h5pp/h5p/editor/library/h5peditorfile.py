@@ -15,9 +15,9 @@ class H5PEditorFile:
     # Constructor. Process data for file uploaded through the editor
     ##
     def __init__(self, request, files, framework):
-        #TODO Figure out if input sanitazion is needed, especially on 'files'
+        # TODO Figure out if input sanitazion is needed, especially on 'files'
 
-        if not 'field' in request.POST or request.POST['field'] == None:
+        if 'field' not in request.POST or request.POST['field'] is None:
             return
 
         field = request.POST['field']
@@ -80,12 +80,12 @@ class H5PEditorFile:
             return False
 
         # Check for field type
-        if not 'type' in self.field:
+        if 'type' not in self.field:
             print('Unable to get field type')
             return False
 
         # Check if mime type is allowed
-        if ('mimes' in self.field and not self.typ in self.field['mimes']) or self.extension[0:3] == 'py':
+        if ('mimes' in self.field and self.typ not in self.field['mimes']) or self.extension[0:3] == 'py':
             print('File type isn\'t allowed')
             return False
 
@@ -162,7 +162,7 @@ class H5PEditorFile:
     ##
     def getName(self):
         global name
-        if name == None:
+        if name is None:
             name = str(uuid.uuid1())
 
             # Add extension to name
@@ -182,7 +182,7 @@ class H5PEditorFile:
     ##
 
     def getData(self):
-        return None if not 'data' in locals() or 'data' in globals() else self.data
+        return None if 'data' not in locals() or 'data' in globals() else self.data
 
     ##
     # Print result from file processing

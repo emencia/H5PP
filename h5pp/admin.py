@@ -45,7 +45,8 @@ class EventsAdmin(admin.ModelAdmin):
     list_display = ('user_id', 'type', 'sub_type')
     ordering = ('type', 'sub_type')
     readonly_fields = (
-    'user_id', 'created_at', 'type', 'sub_type', 'content_id', 'content_title', 'library_name', 'library_version')
+        'user_id', 'created_at', 'type', 'sub_type', 'content_id', 'content_title', 'library_name', 'library_version'
+    )
 
 
 admin.site.register(h5p_events, EventsAdmin)

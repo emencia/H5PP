@@ -1,8 +1,7 @@
 from django.test import TestCase
 from django.conf import settings
-from django.contrib.auth.models import User
 from h5pp.h5p.h5pclasses import H5PDjango
-from h5pp.h5p.library.h5pdefaultstorage import H5PDefaultStorage
+from h5pp.h5p.library.H5PDefaultStorage import H5PDefaultStorage
 from h5pp.h5p.editor.library.h5peditorstorage import H5PEditorStorage
 from h5pp.models import *
 import shutil
@@ -53,15 +52,15 @@ class CoreTestCase(TestCase):
 			'disable': 0,
 		}
 
-		core.saveContent(content)
-		result = list(h5p_contents.objects.values())
+		core.save_content(content)
+		result = h5p_contents.objects.values()
 
 		self.assertTrue(result.exists())
 
 		del(content['id'])
 		content['title'] = 'ContentTest2'
 
-		core.saveContent(content)
+		core.save_content(content)
 		result = list(h5p_contents.objects.values())
 
 		self.assertTrue(result[1]['title'] == 'ContentTest2')
@@ -85,7 +84,7 @@ class CoreTestCase(TestCase):
 		}
 
 		interface.insertContent(content)
-		result = core.loadContent(1)
+		result = core.load_content(1)
 
 		self.assertTrue(result['library']['contentId'] == 1)
 		self.assertTrue(result['library']['id'] == 1)
@@ -93,17 +92,17 @@ class CoreTestCase(TestCase):
 		self.assertFalse('library_id' in result)
 		print('test_load_content ---- Check')
 
-	def test_load_library(self):
-		user = User.objects.get(username='titi')
-		interface = H5PDjango(user)
-		core = interface.h5pGetInstance('core')
+	# def test_load_library(self):
+	# 	user = User.objects.get(username='titi')
+	# 	interface = H5PDjango(user)
+	# 	core = interface.h5pGetInstance('core')
 
 	def test_load_library(self):
 		user = User.objects.get(username='titi')
 		interface = H5PDjango(user)
 		core = interface.h5pGetInstance('core')
 
-		result = core.loadLibrary('H5P.Test', 1, 1)
+		result = core.load_library('H5P.Test', 1, 1)
 
 		self.assertEqual(1, result['library_id'])
 		print('test_load_library ---- Check')
@@ -145,11 +144,11 @@ class StorageTestCase(TestCase):
 		#TODO H5PDefaultStorage appends /h5pp/ itself? What is going on here?
 		storage = H5PDefaultStorage(settings.MEDIA_ROOT)
 		lib = list(h5p_libraries.objects.filter(library_id=1).values())[0]
-		#TODO Make test generic!
+		# TODO Make test generic!
 		os.makedirs('/home/pod/H5PP/media/tmp/H5P.Test')
 		lib['uploadDirectory'] = '/home/pod/H5PP/media/tmp/H5P.Test'
 
-		storage.saveLibrary(lib)
+		storage.save_library(lib)
 
 		self.assertTrue(os.path.exists('/home/pod/H5PP/media/libraries/H5P.Test-1.1'))
 
@@ -162,7 +161,7 @@ class StorageTestCase(TestCase):
 		cont = list(h5p_contents.objects.filter(content_id=1).values())[0]
 		os.makedirs('/home/pod/H5PP/media/tmp/ContentTest')
 
-		storage.saveContent('/home/pod/H5PP/media/tmp/ContentTest', 1)
+		storage.save_content('/home/pod/H5PP/media/tmp/ContentTest', 1)
 
 		self.assertTrue(os.path.exists('/home/pod/H5PP/media/content/1'))
 

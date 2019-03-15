@@ -5,9 +5,9 @@ from django import forms
 from django.conf import settings
 from h5pp.models import h5p_libraries
 from h5pp.h5p.h5pclasses import H5PDjango
-from h5pp.h5p.h5pmodule import h5pInsert, h5pGetContent
+from h5pp.h5p.h5pmodule import h5p_insert
 from h5pp.h5p.editor.h5peditormodule import createContent
-from pathlib import Path
+
 
 def handleUploadedFile(files, filename):
     """
@@ -48,21 +48,21 @@ class LibrariesForm(forms.Form):
         down = self.cleaned_data.get('download')
         unins = self.cleaned_data.get('uninstall')
 
-        if h5pfile != None:
-            if down != False or unins != False:
+        if h5pfile is not None:
+            if down is not False or unins is not False:
                 raise forms.ValidationError('Too many choices selected.')
             interface = H5PDjango(self.user)
             paths = handleUploadedFile(h5pfile, h5pfile.name)
             validator = interface.h5pGetInstance('validator', paths['folderPath'], paths['path'])
 
-            if not validator.isValidPackage(True, False):
+            if not validator.is_valid_package(True, False):
                 raise forms.ValidationError('The uploaded file was not a valid h5p package.')
 
             storage = interface.h5pGetInstance('storage')
-            if not storage.savePackage(None, None, True):
+            if not storage.save_package(None, None, True):
                 raise forms.ValidationError('Error during library save.')
-        elif down != False:
-            if unins != False:
+        elif down:
+            if unins:
                 raise forms.ValidationError('Too many choices selected.')
             libraries = list(h5p_libraries.objects.values())
             if not len(libraries) > 0:
@@ -70,7 +70,7 @@ class LibrariesForm(forms.Form):
 
             interface = H5PDjango(self.user)
             interface.updateTutorial()
-        elif unins == False:
+        elif unins:
             raise forms.ValidationError('No actions selected.')
 
         return self.cleaned_data
@@ -112,19 +112,19 @@ class CreateForm(forms.Form):
             paths = handleUploadedFile(h5pfile, h5pfile.name)
             validator = interface.h5pGetInstance('validator', paths['folderPath'], paths['path'])
 
-            if not validator.isValidPackage(False, False):
+            if not validator.is_valid_package(False, False):
                 raise forms.ValidationError('The uploaded file was not a valid h5p package.')
 
             self.request.POST['h5p_upload'] = paths['path']
             self.request.POST['h5p_upload_folder'] = paths['folderPath']
-            if not h5pInsert(self.request, interface):
+            if not h5p_insert(self.request, interface):
                 raise forms.ValidationError('Error during saving the content.')
         else:
             interface = H5PDjango(self.request.user)
             core = interface.h5pGetInstance('core')
             content = dict()
             content['disable'] = 0
-            libraryData = core.libraryFromString(self.request.POST['h5p_library'])
+            libraryData = core.library_from_string(self.request.POST['h5p_library'])
             if not libraryData:
                 raise forms.ValidationError('You must choose an H5P content type or upload an H5P file.')
             else:
@@ -135,9 +135,9 @@ class CreateForm(forms.Form):
                 if not len(runnable) > 0 and runnable[0]['runnable'] == 0:
                     raise forms.ValidationError('Invalid H5P content type')
 
-                content['library']['libraryId'] = core.h5pF.getLibraryId(content['library']['machineName'],
-                                                                         content['library']['majorVersion'],
-                                                                         content['library']['minorVersion'])
+                content['library']['libraryId'] = core.h5pF.get_library_id(content['library']['machineName'],
+                                                                           content['library']['majorVersion'],
+                                                                           content['library']['minorVersion'])
                 if not content['library']['libraryId']:
                     raise forms.ValidationError('No such library')
 
@@ -147,7 +147,7 @@ class CreateForm(forms.Form):
                 params = json.loads(content['params'])
                 if 'contentId' in self.request.POST:
                     content['id'] = self.request.POST['contentId']
-                content['id'] = core.saveContent(content)
+                content['id'] = core.save_content(content)
 
                 if not createContent(self.request, content, params):
                     raise forms.ValidationError('Impossible to create the content')
@@ -159,7 +159,7 @@ class CreateForm(forms.Form):
     def getJsonContent(self):
         if 'json_content' in self.request.GET or 'translation_source' in self.request.GET and 'json_content' in \
             self.request.GET['translation_source']:
-            filteredParams = self.request.GET['json_content'] if not 'translation_source' in self.request.GET else \
+            filteredParams = self.request.GET['json_content'] if 'translation_source' not in self.request.GET else \
             self.request.GET['translation_source']['json_content']
         else:
             filteredParams = '{}'

@@ -1,13 +1,12 @@
 from django.conf.urls import url
 from django.urls import path, include
-from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 
-from h5pp.views import (librariesView, CreateContentView, UpdateContentView, ContentDetailView, contentsView,
+from h5pp.views import (librariesView, CreateContentView, ContentDetailView, contentsView,
                         createView, editorAjax, listView, ajax, scoreView, embedView)
 
 app_name = 'h5pp'
-urlpatterns = [# Base
+urlpatterns = [  # Base
     url(r'^home/$', TemplateView.as_view(template_name="h5p/home.html"), name="h5phome"),
 
     # Contents and Libraries
@@ -23,7 +22,7 @@ urlpatterns = [# Base
     url(r'^create/(?P<contentId>\d+)/$', createView, name='h5pedit'),
 
     # Users score
-    url(r'^score/(?P<contentId>\d+)/$', scoreView, name='h5pscore'), # Embed page
+    url(r'^score/(?P<contentId>\d+)/$', scoreView, name='h5pscore'),  # Embed page
     url(r'^embed/$', embedView, name='h5pembed'),
 
     # Ajax
