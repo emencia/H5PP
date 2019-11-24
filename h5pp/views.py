@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.shortcuts import render
@@ -34,7 +34,7 @@ from h5pp.h5p.editor.library.h5peditorfile import H5PEditorFile
 
 
 def librariesView(request):
-    if request.user.is_authenticated() and request.user.is_superuser:
+    if request.user.is_authenticated and request.user.is_superuser:
         libraries = h5p_libraries.objects.all()
         if request.method == 'POST':
             form = LibrariesForm(request.user, request.POST, request.FILES)
@@ -150,7 +150,7 @@ class UpdateContentView(FormView):
 
 
 def createView(request, contentId=None):
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         editor = h5peditorContent(request, contentId)
         if request.method == 'POST':
             if contentId is not None:
@@ -233,7 +233,7 @@ def contentsView(request):
             html = '<div>Sorry, preview of H5P content is not yet available.</div>'
             return render(request, 'h5p/content.html', {'html': html})
         else:
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 h5pSetStarted(request.user, h5pGetContentId(request))
                 score = getUserScore(h5pGetContentId(request), request.user)
 
@@ -277,7 +277,7 @@ def scoreView(request, contentId):
         content = h5p_contents.objects.get(content_id=contentId)
     except:
         raise Http404
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         if request.method == 'POST' and (request.user.username == content.author or request.user.is_superuser):
             userData = h5p_content_user_data.objects.filter(content_main_id=content.content_id)
             if userData:
@@ -333,7 +333,7 @@ def embedView(request):
         h5pLoad(request)
         embed = h5pEmbed(request)
         score = None
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             h5pSetStarted(request.user, h5pGetContentId(request))
             score = getUserScore(request.GET['contentId'], request.user)[0]
         return render(request, 'h5p/embed.html', {'embed': embed, 'score': score})
