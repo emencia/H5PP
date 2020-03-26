@@ -17,7 +17,7 @@ from h5pp.h5p.editor.library.h5peditorfile import H5PEditorFile
 
 
 def librariesView(request):
-    if True or (request.user.is_authenticated() and request.user.is_superuser):
+    if request.user.is_authenticated and request.user.is_superuser:
         libraries = h5p_libraries.objects.all()
         if request.method == 'POST':
             form = LibrariesForm(request.user, request.POST, request.FILES)
@@ -197,7 +197,7 @@ def contentsView(request):
             html = '<div>Sorry, preview of H5P content is not yet available.</div>'
             return render(request, 'h5p/content.html', {'html': html})
         else:
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 h5p_set_started(request.user, h5p_get_content_id(request))
                 score = get_user_score(h5p_get_content_id(request), request.user)
 
