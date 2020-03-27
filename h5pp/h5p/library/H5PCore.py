@@ -413,14 +413,14 @@ class H5PCore:
     ##
     # Recursive function for removing directories.
     ##
-    def delete_file_tree(self, pdir):
+    def delete_dir_recursive(self, pdir):
         if not os.path.isdir(pdir):
             return False
 
         files = list(set(os.listdir(pdir)).difference([".", ".."]))
 
         for f in files:
-            self.delete_file_tree(pdir / f) if os.path.isdir(pdir / f) else os.remove(pdir / f)
+            self.delete_dir_recursive(pdir / f) if os.path.isdir(pdir / f) else os.remove(pdir / f)
 
         return os.rmdir(pdir)
 

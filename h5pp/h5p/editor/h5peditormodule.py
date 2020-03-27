@@ -58,9 +58,8 @@ def h5peditorContent(request, contentId=None):
     add.append(languageFile)
 
     contentValidator = framework.h5pGetInstance('contentvalidator')
-    editor_path = os.path.join(settings.H5P_STORAGE_ROOT, 'editor')
     editor['editor'] = {
-        'filesPath': str(PurePath(editor_path)),
+        'filesPath': str(PurePath(settings.H5P_STORAGE_ROOT / 'editor')),
         'fileIcon': {
             'path': "{}h5p/h5peditor/images/binary-file.png".format(settings.STATIC_URL),
             'width': 50,

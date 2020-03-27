@@ -84,7 +84,7 @@ class H5PValidator:
         # Only allow files with the .h5p extension.
         if tmp_path.suffix.lower() != ".h5p":
             print("The file you uploaded is not a valid HTML5 Package (It does not have the .h5p file extension)")
-            self.h5p_core.delete_file_tree(tmp_dir)
+            self.h5p_core.delete_dir_recursive(tmp_dir)
             return False
 
         zipf = zipfile.ZipFile(tmp_path, "r")
@@ -93,7 +93,7 @@ class H5PValidator:
             zipf.close()
         else:
             print("The file you uploaded is not a valid HTML5 Package (We are unable to unzip it)")
-            self.h5p_core.delete_file_tree(tmp_dir)
+            self.h5p_core.delete_dir_recursive(tmp_dir)
             return False
 
         os.remove(tmp_path)
@@ -243,7 +243,7 @@ class H5PValidator:
             valid = H5PCore.empty(missing_libraries[0]) and valid
 
         if not valid:
-            self.h5p_core.delete_file_tree(tmp_dir)
+            self.h5p_core.delete_dir_recursive(tmp_dir)
         return valid
 
     ##
