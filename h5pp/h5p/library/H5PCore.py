@@ -11,12 +11,12 @@ from typing import Union, Any, Dict
 
 import urllib3
 
-from h5p.library.H5PExport import H5PExport
-from h5p.library.H5PDefaultStorage import H5PDefaultStorage
-from h5p.library.h5pdevelopment import H5PDevelopment
+from h5pp.h5p.library.H5PExport import H5PExport
+from h5pp.h5p.library.H5PDefaultBase import H5PDefaultStorage
+from h5pp.h5p.library.h5pdevelopment import H5PDevelopment
 from h5p_django import settings
 from django.template.defaultfilters import slugify
-from h5p.library.H5PContentValidator import H5PContentValidator
+from h5pp.h5p.library.H5PContentValidator import H5PContentValidator
 
 
 http = urllib3.PoolManager()

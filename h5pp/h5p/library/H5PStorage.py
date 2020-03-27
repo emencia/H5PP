@@ -1,7 +1,7 @@
 ##
 # self class is used for saving H5P files
 ##
-from h5p.library.H5PCore import H5PCore
+from h5pp.h5p.library.H5PCore import H5PCore
 
 
 class H5PStorage:

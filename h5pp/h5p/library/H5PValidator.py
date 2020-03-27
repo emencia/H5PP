@@ -10,8 +10,8 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-from h5p.library.H5PContentValidator import H5PContentValidator
-from h5p.library.H5PCore import H5PCore
+from h5pp.h5p.library.H5PContentValidator import H5PContentValidator
+from h5pp.h5p.library.H5PCore import H5PCore
 
 
 class H5PValidator:

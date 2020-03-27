@@ -12,11 +12,11 @@ from django.contrib import messages
 from django.db import connection
 from django.utils.text import slugify
 
-from h5p.library.H5PContentValidator import H5PContentValidator
-from h5p.library.H5PCore import H5PCore
-from h5p.library.H5PExport import H5PExport
-from h5p.library.H5PStorage import H5PStorage
-from h5p.library.H5PValidator import H5PValidator
+from h5pp.h5p.library.H5PContentValidator import H5PContentValidator
+from h5pp.h5p.library.H5PCore import H5PCore
+from h5pp.h5p.library.H5PExport import H5PExport
+from h5pp.h5p.library.H5PStorage import H5PStorage
+from h5pp.h5p.library.H5PValidator import H5PValidator
 from h5p_django import settings
 from h5pp.models import h5p_libraries, h5p_libraries_libraries, h5p_libraries_languages, h5p_contents, \
     h5p_contents_libraries, h5p_content_user_data, h5p_counters

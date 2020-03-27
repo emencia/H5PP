@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.conf import settings
 from h5pp.h5p.h5pclasses import H5PDjango
-from h5pp.h5p.library.H5PDefaultStorage import H5PDefaultStorage
+from h5pp.h5p.library.H5PDefaultBase import H5PDefaultStorage
 from h5pp.h5p.editor.library.h5peditorstorage import H5PEditorStorage
 from h5pp.models import *
 import shutil

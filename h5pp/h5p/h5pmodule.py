@@ -11,7 +11,7 @@ import re
 from django.conf import settings
 from django.contrib.sites.models import Site
 
-from h5p.h5pevent import H5PEvent
+from h5pp.h5p.h5pevent import H5PEvent
 from h5pp.models import *
 from h5pp.h5p.h5pclasses import H5PDjango
 
