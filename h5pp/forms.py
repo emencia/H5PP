@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 from django import forms
 from django.conf import settings
@@ -15,11 +16,10 @@ def handleUploadedFile(files, filename):
     """
     # TODO Figure out if filename is protected against injection attacks
 
-    tmpdir = settings.H5P_STORAGE_ROOT / 'tmp'
+    tmpdir = Path(settings.H5P_STORAGE_ROOT) / 'tmp'
 
     if not os.path.exists(tmpdir):
         os.makedirs(tmpdir)
-
     file_path = tmpdir / filename
 
     with open(file_path, 'wb+') as destination:

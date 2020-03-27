@@ -51,14 +51,16 @@ def h5peditorContent(request, contentId=None):
     add.append(settings.STATIC_URL + 'h5p/h5peditor/application.js')
 
     languageFile = settings.STATIC_URL + 'h5p/h5peditor/language/' + settings.H5P_LANGUAGE + '.js'
+
     if not os.path.exists(settings.BASE_DIR + languageFile):
         languageFile = settings.STATIC_URL + 'h5p/h5peditor/language/en.js'
 
     add.append(languageFile)
 
     contentValidator = framework.h5pGetInstance('contentvalidator')
+    editor_path = os.path.join(settings.H5P_STORAGE_ROOT, 'editor')
     editor['editor'] = {
-        'filesPath': str(PurePath(settings.H5P_STORAGE_ROOT / 'editor')),
+        'filesPath': str(PurePath(editor_path)),
         'fileIcon': {
             'path': "{}h5p/h5peditor/images/binary-file.png".format(settings.STATIC_URL),
             'width': 50,

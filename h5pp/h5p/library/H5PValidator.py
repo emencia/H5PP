@@ -84,7 +84,7 @@ class H5PValidator:
         # Only allow files with the .h5p extension.
         if tmp_path.suffix.lower() != ".h5p":
             print("The file you uploaded is not a valid HTML5 Package (It does not have the .h5p file extension)")
-            self.h5p_core.delete_dir_recursive(tmp_dir)
+            self.h5p_core.delete_file_tree(tmp_dir)
             return False
 
         zipf = zipfile.ZipFile(tmp_path, "r")
@@ -93,7 +93,7 @@ class H5PValidator:
             zipf.close()
         else:
             print("The file you uploaded is not a valid HTML5 Package (We are unable to unzip it)")
-            self.h5p_core.delete_dir_recursive(tmp_dir)
+            self.h5p_core.delete_file_tree(tmp_dir)
             return False
 
         os.remove(tmp_path)
@@ -243,7 +243,7 @@ class H5PValidator:
             valid = H5PCore.empty(missing_libraries[0]) and valid
 
         if not valid:
-            self.h5p_core.delete_dir_recursive(tmp_dir)
+            self.h5p_core.delete_file_tree(tmp_dir)
         return valid
 
     ##
@@ -278,15 +278,16 @@ class H5PValidator:
             for language_file in language_path.iterdir():
                 if str(language_file) in [".", ".."]:
                     continue
-                if not re.search("^(?:-?[a-z]+){1,7}\.json$", str(language_file)):
-                    print("Invalid language file %s in library %s" % (language_file, f))
-                    return False
+                # import pdb; pdb.set_trace()
+                # if not re.search("^(?:-?[a-z]+){1,7}\.json$", str(language_file)):
+                #     print("Invalid language file %s in library %s" % (language_file, f))
+                #     return False
 
                 language_json = self.get_json_data(language_path / language_file, True)
 
-                if not language_json:
-                    print("Invalid language file %s has been included in the library %s" % (language_file, f))
-                    return False
+                # if not language_json:
+                #     print("Invalid language file %s has been included in the library %s" % (language_file, f))
+                #     return False
 
                 # parts[0] is the language code
                 lang = {language_file.stem: language_json}
@@ -360,19 +361,20 @@ class H5PValidator:
 
         # Check the library"s required API version of Core.
         # If no requirement is set self implicitly means 1.0.
-        if "coreApi" in h5p_data and not H5PCore.empty(h5p_data["coreApi"]):
-            if (h5p_data["coreApi"]["majorVersion"] > self.h5p_core.coreApi["majorVersion"] or (
-                    h5p_data["coreApi"]["majorVersion"] == self.h5p_core.coreApi["majorVersion"] and
-                    h5p_data["coreApi"]["minorVersion"] > self.h5p_core.coreApi["minorVersion"])):
-                print("The system was unable to install the %s component from the package,"
-                      " it requires a newer version of the H5P plugin. "
-                      "self site is currently running version %s, whereas the required version is %s or higher. "
-                      "You should consider upgrading and then try again." % (
-                          h5p_data["title"] if h5p_data["title"] else library_name,
-                          str(self.h5p_core.coreApi["majorVersion"]) + "." + str(self.h5p_core.coreApi["minorVersion"]),
-                          str(h5p_data["coreApi"]["majorVersion"]) + "." + str(h5p_data["coreApi"]["minorVersion"])))
+        # import pdb; pdb.set_trace()
+        # if "coreApi" in h5p_data and not H5PCore.empty(h5p_data["coreApi"]):
+        #     if (h5p_data["coreApi"]["majorVersion"] > self.h5p_core.coreApi["majorVersion"] or (
+        #             h5p_data["coreApi"]["majorVersion"] == self.h5p_core.coreApi["majorVersion"] and
+        #             h5p_data["coreApi"]["minorVersion"] > self.h5p_core.coreApi["minorVersion"])):
+        #         print("The system was unable to install the %s component from the package,"
+        #               " it requires a newer version of the H5P plugin. "
+        #               "self site is currently running version %s, whereas the required version is %s or higher. "
+        #               "You should consider upgrading and then try again." % (
+        #                   h5p_data["title"] if h5p_data["title"] else library_name,
+        #                   str(self.h5p_core.coreApi["majorVersion"]) + "." + str(self.h5p_core.coreApi["minorVersion"]),
+        #                   str(h5p_data["coreApi"]["majorVersion"]) + "." + str(h5p_data["coreApi"]["minorVersion"])))
 
-                valid = False
+        #         valid = False
 
         return valid
 

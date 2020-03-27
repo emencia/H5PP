@@ -95,14 +95,14 @@ class H5PContentValidator:
         # Scan content directory for files, recurse into sub directories.
         files = list(set(os.listdir(contentPath)).difference([".", ".."]))
         valid = True
-        from h5p.library.H5PCore import H5PCore
+        from h5pp.h5p.library.H5PCore import H5PCore
         whitelist = self.h5pF.getWhitelist(isLibrary, H5PCore.defaultContentWhitelist,
             H5PCore.defaultLibraryWhitelistExtras)
 
         wl_regex = "^.*\.(" + re.sub(" ", "|", whitelist) + ")$"
 
         for f in files:
-            filePath = contentPath / f
+            filePath = os.path.join(contentPath, f)
             if os.path.isdir(filePath):
                 valid = self.validateContentFiles(filePath, isLibrary) and valid
             else:
@@ -150,7 +150,7 @@ class H5PContentValidator:
     def validateSelect(self, select, semantics):
         optional = semantics['optional'] if 'optional' in semantics else False
         strict = False
-        from h5p.library.H5PCore import H5PCore
+        from h5pp.h5p.library.H5PCore import H5PCore
         if 'options' in semantics and not H5PCore.empty(semantics['options']):
             # We have a strict set of options to choose from.
             strict = True

@@ -15,7 +15,7 @@ class H5PDefaultStorage:
         Constructor for H5PDefaultStorage
         :param path: Path to the h5p storage directory
         """
-        self.path = path
+        self.path = Path(path)
 
     def save_library(self, library):
         """
@@ -119,7 +119,10 @@ class H5PDefaultStorage:
                 if (source/file).is_dir():
                     self.copy_dir_recursive(source / file, destination / file)
                 else:
-                    shutil.copy(str(source/file), str(destination/file))
+                    try:
+                        shutil.copy(str(source/file), str(destination/file))
+                    except shutil.SameFileError:
+                        pass
 
     def create_dir_recursive(self, path: Path):
         """
@@ -148,9 +151,17 @@ class H5PDefaultStorage:
         separator = '-' if format_as_folder_name else ' '
 
         if 'machine_name' in library:
-            return library['machine_name'] + separator + library['major_version'] + '.' + library['minor_version']
+            name = '{}{}{}.{}'.format(library['machine_name'],
+                                      separator,
+                                      library['major_version'],
+                                      library['minor_version'])
+            return name
         else:
-            return library['machineName'] + separator + library['majorVersion'] + '.' + library['minorVersion']
+            name = '{}{}{}.{}'.format(library['machineName'],
+                                      separator,
+                                      library['majorVersion'],
+                                      library['minorVersion'])
+            return name
 
     ##
     # Save files uploaded through the editor.

@@ -7,6 +7,7 @@ from datetime import time
 
 import requests
 import django
+from pathlib import Path
 
 from django.contrib import messages
 from django.db import connection
@@ -112,7 +113,7 @@ class H5PDjango:
         global dirpath
         if folder is not None:
             dirpath = folder
-        return dirpath
+        return Path(dirpath)
 
     ##
     # Get the path to the last uploaded h5p file
@@ -196,12 +197,12 @@ class H5PDjango:
         usage = dict()
         cursor = connection.cursor()
         cursor.execute("""
-			SELECT COUNT(distinct n.content_id)
-			FROM h5p_libraries l
-			JOIN h5p_contents_libraries cl ON l.library_id = cl.library_id
-			JOIN h5p_contents n ON cl.content_id = n.content_id
-			WHERE l.library_id = %s
-		""" % libraryId)
+            SELECT COUNT(distinct n.content_id)
+            FROM h5p_libraries l
+            JOIN h5p_contents_libraries cl ON l.library_id = cl.library_id
+            JOIN h5p_contents n ON cl.content_id = n.content_id
+            WHERE l.library_id = %s
+        """ % libraryId)
         usage['content'] = cursor.fetchall()
         usage['libraries'] = h5p_libraries_libraries.objects.filter(required_library_id=libraryId).count()
 
@@ -214,11 +215,11 @@ class H5PDjango:
     def getLibraryContentCount(self):
         cursor = connection.cursor()
         cursor.execute("""
-			SELECT machine_name, major_version, minor_version, count(*) AS count
-			FROM h5p_contents, h5p_libraries
-			WHERE main_library_id = library_id
-			GROUP BY machine_name, major_version, minor_version
-		""")
+            SELECT machine_name, major_version, minor_version, count(*) AS count
+            FROM h5p_contents, h5p_libraries
+            WHERE main_library_id = library_id
+            GROUP BY machine_name, major_version, minor_version
+        """)
         result = self.dictfetchall(cursor)
 
         # Extract results
@@ -480,14 +481,14 @@ class H5PDjango:
 
         cursor = connection.cursor()
         cursor.execute("""
-			SELECT hl.machine_name AS name,
-					hl.major_version AS major,
-					hl.minor_version AS minor,
-					hll.dependency_type AS type
-			FROM h5p_libraries_libraries hll
-			JOIN h5p_libraries hl ON hll.required_library_id = hl.library_id
-			WHERE hll.library_id = %s
-		""" % library['library_id'])
+            SELECT hl.machine_name AS name,
+                    hl.major_version AS major,
+                    hl.minor_version AS minor,
+                    hll.dependency_type AS type
+            FROM h5p_libraries_libraries hll
+            JOIN h5p_libraries hl ON hll.required_library_id = hl.library_id
+            WHERE hll.library_id = %s
+        """ % library['library_id'])
         result = self.dictfetchall(cursor)
 
         for dependency in result:
@@ -547,25 +548,25 @@ class H5PDjango:
     def loadContent(self, pid):
         cursor = connection.cursor()
         cursor.execute("""
-			SELECT hn.content_id AS id,
-					hn.title,
-					hn.json_contents AS params,
-					hn.embed_type,
+            SELECT hn.content_id AS id,
+                    hn.title,
+                    hn.json_contents AS params,
+                    hn.embed_type,
                     hn.content_type,
                     hn.author,
-					hl.library_id,
-					hl.machine_name AS library_name,
-					hl.major_version AS library_major_version,
-					hl.minor_version AS library_minor_version,
-					hl.embed_types AS library_embed_types,
-					hl.fullscreen AS library_fullscreen,
-					hn.filtered,
-					hn.disable,
-					hn.slug
-			FROM h5p_contents hn
-			JOIN h5p_libraries hl ON hl.library_id = hn.main_library_id
-			WHERE content_id = %s
-		""" % pid)
+                    hl.library_id,
+                    hl.machine_name AS library_name,
+                    hl.major_version AS library_major_version,
+                    hl.minor_version AS library_minor_version,
+                    hl.embed_types AS library_embed_types,
+                    hl.fullscreen AS library_fullscreen,
+                    hn.filtered,
+                    hn.disable,
+                    hn.slug
+            FROM h5p_contents hn
+            JOIN h5p_libraries hl ON hl.library_id = hn.main_library_id
+            WHERE content_id = %s
+        """ % pid)
         content = self.dictfetchall(cursor)
         return None if len(content) == 0 else content[0]
 
@@ -583,36 +584,36 @@ class H5PDjango:
         cursor = connection.cursor()
         if typ is not None:
             cursor.execute("""
-				SELECT hl.library_id,
-						hl.machine_name,
-						hl.major_version,
-						hl.minor_version,
-						hl.patch_version,
-						hl.preloaded_css,
-						hl.preloaded_js,
-						hnl.drop_css,
-						hnl.dependency_type
-				FROM h5p_contents_libraries hnl
-				JOIN h5p_libraries hl ON hnl.library_id = hl.library_id
-				WHERE hnl.content_id = %s AND hnl.dependency_type = %s
-				ORDER BY hnl.weight
-			""" % (pid, "'" + typ + "'"))
+                SELECT hl.library_id,
+                        hl.machine_name,
+                        hl.major_version,
+                        hl.minor_version,
+                        hl.patch_version,
+                        hl.preloaded_css,
+                        hl.preloaded_js,
+                        hnl.drop_css,
+                        hnl.dependency_type
+                FROM h5p_contents_libraries hnl
+                JOIN h5p_libraries hl ON hnl.library_id = hl.library_id
+                WHERE hnl.content_id = %s AND hnl.dependency_type = %s
+                ORDER BY hnl.weight
+            """ % (pid, "'" + typ + "'"))
         else:
             cursor.execute("""
-				SELECT hl.library_id,
-						hl.machine_name,
-						hl.major_version,
-						hl.minor_version,
-						hl.patch_version,
-						hl.preloaded_css,
-						hl.preloaded_js,
-						hnl.drop_css,
-						hnl.dependency_type
-				FROM h5p_contents_libraries hnl
-				JOIN h5p_libraries hl ON hnl.library_id = hl.library_id
-				WHERE hnl.content_id = %s
-				ORDER BY hnl.weight
-			""" % pid)
+                SELECT hl.library_id,
+                        hl.machine_name,
+                        hl.major_version,
+                        hl.minor_version,
+                        hl.patch_version,
+                        hl.preloaded_css,
+                        hl.preloaded_js,
+                        hnl.drop_css,
+                        hnl.dependency_type
+                FROM h5p_contents_libraries hnl
+                JOIN h5p_libraries hl ON hnl.library_id = hl.library_id
+                WHERE hnl.content_id = %s
+                ORDER BY hnl.weight
+            """ % pid)
 
         result = self.dictfetchall(cursor)
         dependencies = collections.OrderedDict()
