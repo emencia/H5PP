@@ -230,7 +230,7 @@ class H5PDefaultStorage:
             file_path = path
         else:
             file_path = self.path/path
-
+        # TODO js or css files don't import 
         with file_path.open(mode='rb') as pointer:
             result = pointer.read().decode('utf8', 'ignore')
 

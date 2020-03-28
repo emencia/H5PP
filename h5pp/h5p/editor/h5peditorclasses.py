@@ -95,14 +95,16 @@ class H5PDjangoEditor:
                     # External file
                     if 'javascript' not in libraryData:
                         libraryData['javascript'] = collections.OrderedDict()
-                    libraryData['javascript'][script['path'] + script['version']] = '\n' + script['path'].read()
+                    _path_version = script['path'] + script['version']
+                    _path = '\n' + script['path'].read()
+                    libraryData['javascript'][_path_version] = _path
                 else:
                     # Local file
                     if 'javascript' not in libraryData:
                         libraryData['javascript'] = collections.OrderedDict()
-
-                    libraryData['javascript'][url + script['path'] + script['version']] = '\n' + self.h5p.fs.get_content(
-                        script['path'])
+                    url_version = url + script['path'] + script['version']
+                    _path = '\n' + self.h5p.fs.get_content(Path(script['path']))
+                    libraryData['javascript'][url_version] = _path
 
         # Stylesheets
         if 'styles' in files:
@@ -119,7 +121,7 @@ class H5PDjangoEditor:
                     self.buildCssPath(None, url + os.path.dirname(css['path']) + '/')
                     libraryData['css'][url + css['path'] + css['version']] = re.sub(
                         '(?i)url\([\']?(?![a-z]+:|\/+)([^\')]+)[\']?\)', self.buildCssPath,
-                        self.h5p.fs.get_content(css['path']))
+                        self.h5p.fs.get_content(Path(css['path'])))
 
         # Add translations for libraries
         for key, library in list(libraries.items()):
