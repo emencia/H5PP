@@ -632,7 +632,7 @@ class H5PCore:
             lib_string = self.library_to_string(library)
 
         if lib_string not in libraryIdMap:
-            libraryIdMap[lib_string] = self.h5p_framework.getLibraryId(library["machineName"], library["majorVersion"],
+            libraryIdMap[lib_string] = self.h5p_framework.get_library_id(library["machineName"], library["majorVersion"],
                                                                        library["minorVersion"])
 
         return libraryIdMap[lib_string]

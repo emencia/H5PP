@@ -150,7 +150,7 @@ class H5PDjango:
     # Get id to an existing library
     # If version number is not specified, the newest version will be returned
     ##
-    def getLibraryId(self, machineName, majorVersion=None, minorVersion=None):
+    def get_library_id(self, machineName, majorVersion=None, minorVersion=None):
         if majorVersion is None or minorVersion is None:
             libraryId = h5p_libraries.objects.filter(machine_name=machineName).values('library_id')
         else:

@@ -161,12 +161,12 @@ class H5PClassesTestCase(TestCase):
         user = User.objects.get(username='titi')
         interface = H5PDjango(user)
 
-        self.assertEqual(1, interface.getLibraryId('H5P.Test'))
-        self.assertEqual(1, interface.getLibraryId('H5P.Test', 1, 1))
+        self.assertEqual(1, interface.get_library_id('H5P.Test'))
+        self.assertEqual(1, interface.get_library_id('H5P.Test', 1, 1))
 
         h5p_libraries.objects.filter(library_id=1).delete()
 
-        self.assertTrue(interface.getLibraryId('H5P.Test') is None)
+        self.assertTrue(interface.get_library_id('H5P.Test') is None)
         print('test_get_library_id ---- Check')
 
     def test_is_patched_library(self):

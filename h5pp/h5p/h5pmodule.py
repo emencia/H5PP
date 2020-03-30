@@ -42,11 +42,10 @@ def h5p_get_export_path(content):
     # Converted from: return os.path.join(settings.MEDIA_ROOT, 'h5pp', 'exports',
     # ((content['slug'] + '-') if 'slug' in content else ''), str(content['id']) + '.h5p')
 
-    return settings.H5P_STORAGE_ROOT \
-           / 'exports' \
-           / ((content['slug'] + '-') if 'slug' in content else '') \
-           / (str(content['id']) + '.h5p')
-
+    return os.path.join(settings.H5P_STORAGE_ROOT,
+                        'exports',
+                        ((content['slug'] + '-') if 'slug' in content else ''),
+                        (str(content['id']) + '.h5p'))
 
 ##
 # Creates the title for the library details page

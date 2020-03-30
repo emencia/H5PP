@@ -92,7 +92,7 @@ class H5PDevelopment:
                 continue  # Invalid JSON.
 
             # Save/update library.
-            library['libraryId'] = self.h5p_framework.getLibraryId(library['machineName'], library['majorVersion'],
+            library['libraryId'] = self.h5p_framework.get_library_id(library['machineName'], library['majorVersion'],
                                                                    library['minorVersion'])
             self.h5p_framework.save_library_data(library, (not library['libraryId']))
 
