@@ -317,7 +317,7 @@ class H5PContentValidator:
         if "optional" not in semantics:
             if group is None:
                 return
-
+            
             for field in semantics['fields']:
                 if 'optional' not in field:
                     if field['name'] not in group:

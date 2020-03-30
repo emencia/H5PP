@@ -3,7 +3,7 @@
 import collections
 import json
 import re
-from datetime import time
+from datetime import datetime
 
 import requests
 import django
@@ -415,7 +415,8 @@ class H5PDjango:
             # Reset user datas for this content
             userData = h5p_content_user_data.objects.filter(content_main_id=contentId, delete_on_content_change=1)
             for user in userData:
-                user.timestamp = int(time.time())
+                now = datetime.now()
+                user.timestamp = int(now.timestamp())
                 user.data = 'RESET'
                 user.save()
 
