@@ -135,7 +135,7 @@ class CreateForm(forms.Form):
                 if not len(runnable) > 0 and runnable[0]['runnable'] == 0:
                     raise forms.ValidationError('Invalid H5P content type')
 
-                content['library']['libraryId'] = core.h5pF.get_library_id(content['library']['machineName'],
+                content['library']['libraryId'] = core.h5p_framework.get_library_id(content['library']['machineName'],
                                                                            content['library']['majorVersion'],
                                                                            content['library']['minorVersion'])
                 if not content['library']['libraryId']:
