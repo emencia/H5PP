@@ -4,3 +4,4 @@ content/
 exports/
 libraries/
 tmp/
+.DS_Store

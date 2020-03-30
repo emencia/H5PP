@@ -117,12 +117,12 @@ class H5PDefaultStorage:
         for file in source.iterdir():
             if file.name != '.git' and file.name != '.gitignore':
                 if (source/file).is_dir():
-                    self.copy_dir_recursive(source / file, destination / file)
+                    self.copy_dir_recursive(source/file, destination/file.name)
                 else:
                     try:
-                        shutil.copy(str(source/file), str(destination/file))
-                    except shutil.SameFileError:
-                        pass
+                        shutil.copy(str(source/file), str(destination/file.name))
+                    except shutil.SameFileError as e:
+                        raise Exception(f'Unable to copy {e}')
 
     def create_dir_recursive(self, path: Path):
         """

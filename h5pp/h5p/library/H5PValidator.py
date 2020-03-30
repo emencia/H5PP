@@ -278,7 +278,6 @@ class H5PValidator:
             for language_file in language_path.iterdir():
                 if str(language_file) in [".", ".."]:
                     continue
-                # import pdb; pdb.set_trace()
                 # if not re.search("^(?:-?[a-z]+){1,7}\.json$", str(language_file)):
                 #     print("Invalid language file %s in library %s" % (language_file, f))
                 #     return False
@@ -361,7 +360,7 @@ class H5PValidator:
 
         # Check the library"s required API version of Core.
         # If no requirement is set self implicitly means 1.0.
-        # import pdb; pdb.set_trace()
+
         # if "coreApi" in h5p_data and not H5PCore.empty(h5p_data["coreApi"]):
         #     if (h5p_data["coreApi"]["majorVersion"] > self.h5p_core.coreApi["majorVersion"] or (
         #             h5p_data["coreApi"]["majorVersion"] == self.h5p_core.coreApi["majorVersion"] and
